@@ -78,6 +78,12 @@ Para a dock não brigar por espaço com o painel do KDE, remova o painel nativo
 - **Widget de monitoramento fica atrás das janelas**, por design (camada
   `Bottom`, como um Conky). Só aparece com a área de trabalho livre.
 
+## Licença
+
+[MIT](LICENSE), cobrindo as modificações e adições deste repositório. O projeto
+de origem foi publicado sem licença explícita — o material herdado dele segue
+sob os termos do autor original.
+
 ## Créditos
 
 Derivado de [Isshi0417/quickshell-rice](https://github.com/Isshi0417/quickshell-rice),
