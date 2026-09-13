@@ -1,94 +1,96 @@
 # Huginn
 
-Uma shell de desktop em [QuickShell](https://quickshell.outfoxxed.me/) para **KDE Plasma 6 no Wayland**,
-com a paleta Tokyo Night.
+A [QuickShell](https://quickshell.outfoxxed.me/) desktop shell for **KDE Plasma 6 on Wayland**,
+themed with the Tokyo Night palette.
 
-Huginn é um dos corvos de Odin: voa pelo mundo e volta contando o que viu. É mais
-ou menos o que uma barra de status faz.
+Huginn is one of Odin's ravens: he flies across the world and comes back to
+report what he saw. Which is roughly what a status bar does.
 
-> A maioria dos rices de QuickShell por aí é feita para Hyprland ou Niri. Este
-> roda **sobre o KDE Plasma**, convivendo com o KWin em vez de substituí-lo.
+> Most QuickShell rices out there target Hyprland or Niri. This one runs **on
+> top of KDE Plasma**, coexisting with KWin instead of replacing it.
 
-## O que vem junto
+## What's included
 
-- **Barra superior** — clima, relógio com calendário, player de mídia, bandeja
-  do sistema, volume, brilho, rede e Bluetooth.
-- **Dock inferior** com auto-hide — apps fixados e janelas abertas, separados
-  por um divisor, com preview de janelas ao clicar e reordenação por arrastar.
-- **Launcher de aplicativos** com busca e calculadora embutida.
-- **OSD** de volume e brilho.
-- **Widget de monitoramento** no desktop — CPU, GPU, memória, disco e rede, com
-  gráficos e leitura real do hardware (nada fixo no código).
-- **Motor de temas** que propaga a paleta para GTK, Konsole, Alacritty, btop,
-  Starship, VS Code e outros.
+- **Top bar** — weather, clock with calendar, media player, system tray,
+  volume, brightness, network and Bluetooth.
+- **Auto-hiding dock** — pinned apps and open windows, split by a separator,
+  with window previews on click and drag-to-reorder.
+- **Application launcher** with search and a built-in calculator.
+- **On-screen display** for volume and brightness.
+- **Desktop monitoring widget** — CPU, GPU, memory, disk and network, with
+  graphs and real hardware readings (nothing hardcoded).
+- **Theme engine** that propagates the palette to GTK, Konsole, Alacritty,
+  btop, Starship, VS Code and others.
 
-## Requisitos
+## Requirements
 
-- KDE Plasma 6 em sessão **Wayland**
-- [QuickShell](https://quickshell.outfoxxed.me/) instalado (`quickshell` no AUR)
+- KDE Plasma 6 on a **Wayland** session
+- [QuickShell](https://quickshell.outfoxxed.me/) installed (`quickshell` on the AUR)
 - PipeWire + WirePlumber
-- Python 3 com `python-dbus` (obrigatório: sem ele o dock não enxerga janelas abertas)
+- Python 3 with `python-dbus` (required: without it the dock can't see open windows)
 
-O instalador tenta resolver o resto (`playerctl`, `brightnessctl`, `ddcutil`,
-`wl-clipboard`, `papirus-icon-theme`, `fastfetch`, entre outros) via `pacman`,
-`dnf` ou `apt`, e avisa explicitamente o que faltou em vez de falhar em silêncio.
+The installer handles the rest (`playerctl`, `brightnessctl`, `ddcutil`,
+`wl-clipboard`, `papirus-icon-theme`, `fastfetch`, among others) through
+`pacman`, `dnf` or `apt`, and tells you explicitly what is missing instead of
+failing silently.
 
-## Instalação
+## Installation
 
 ```bash
-git clone https://github.com/<seu-usuario>/huginn.git ~/Projects/huginn
+git clone https://github.com/matheushagedorn/huginn-kde.git ~/Projects/huginn
 cd ~/Projects/huginn
 ./install.sh
 ```
 
-O `~/.config/quickshell` vira um symlink para o repositório, então `git pull`
-atualiza a configuração direto. Configurações que já existiam são movidas para
-`.bak.<timestamp>` em vez de sobrescritas.
+`~/.config/quickshell` becomes a symlink to the repository, so `git pull`
+updates the configuration directly. Pre-existing configs are moved to
+`.bak.<timestamp>` rather than overwritten.
 
-Depois da instalação, falta só um passo manual: criar os atalhos de teclado em
+One manual step remains after installation: create the keyboard shortcuts under
 **System Settings → Keyboard → Shortcuts → Add New → Command or Script**,
-apontando para os scripts em `~/.local/bin/huginn-*`. O instalador imprime a
-lista no fim.
+pointing at the scripts in `~/.local/bin/huginn-*`. The installer prints the
+list at the end.
 
-Para a dock não brigar por espaço com o painel do KDE, remova o painel nativo
-(clique direito nele → Remove Panel).
+To keep the dock from fighting the KDE panel for space, remove the native panel
+(right-click it → Remove Panel).
 
-## Personalização
+## Customization
 
-- **Monitor** — as janelas são fixadas em um monitor específico (por padrão,
-  `DP-2`). Se o seu tiver outro nome (`kscreen-doctor -o` lista), ajuste a linha
-  `screen:` em `quickshell/shell.qml` e nos módulos de launcher e lockscreen.
-- **Tema** — o tema ativo fica em `~/.config/quickshell_current_theme.txt`.
-  As paletas disponíveis estão em `quickshell/theme/Theme.qml` (Tokyo Night,
-  Catppuccin, Gruvbox, Nord, Rosé Pine, Everforest, Solarized e outras).
-- **Apps fixados na dock** — editáveis por arrastar, ou em
+- **Monitor** — windows are pinned to a specific output (`DP-2` by default). If
+  yours is named differently (`kscreen-doctor -o` lists them), adjust the
+  `screen:` line in `quickshell/shell.qml` and in the launcher and lockscreen
+  modules.
+- **Theme** — the active theme lives in `~/.config/quickshell_current_theme.txt`.
+  Available palettes are defined in `quickshell/theme/Theme.qml` (Tokyo Night,
+  Catppuccin, Gruvbox, Nord, Rosé Pine, Everforest, Solarized and more).
+- **Pinned dock apps** — reorder by dragging, or edit
   `quickshell/services/TaskService.qml`.
 
-## Limitações conhecidas
+## Known limitations
 
-- **A tela de bloqueio não é tematizável.** Nas versões recentes do Plasma, o
-  greeter só expõe wallpaper, relógio e controles de mídia
-  (System Settings → Security & Privacy → Screen Locking). E o protocolo de
-  session lock do Wayland impede que qualquer aplicação comum desenhe por cima
-  da tela travada, então uma tela de bloqueio própria não é possível aqui.
-- **OSD de volume duplicado.** Quem dispara o OSD nativo do Plasma é o módulo
-  `audioshortcutsservice` do `kded`, que também processa as teclas de volume.
-  O instalador oferece desativá-lo; aí as teclas passam a ser reapontadas para
-  os scripts do Huginn.
-- **Widget de monitoramento fica atrás das janelas**, por design (camada
-  `Bottom`, como um Conky). Só aparece com a área de trabalho livre.
+- **The lock screen can't be themed.** On recent Plasma versions the greeter
+  only exposes wallpaper, clock and media controls (System Settings → Security
+  & Privacy → Screen Locking). And Wayland's session lock protocol prevents any
+  ordinary application from drawing over a locked screen, so shipping a custom
+  lock screen here isn't possible.
+- **Duplicate volume OSD.** Plasma's native OSD is triggered by the `kded`
+  module `audioshortcutsservice`, which also handles the volume keys. The
+  installer offers to disable it; the keys are then rebound to Huginn's own
+  scripts.
+- **The monitoring widget sits behind windows**, by design (`Bottom` layer, like
+  Conky). It's only visible with a clear desktop.
 
-## Licença
+## License
 
-[MIT](LICENSE), cobrindo as modificações e adições deste repositório. O projeto
-de origem foi publicado sem licença explícita — o material herdado dele segue
-sob os termos do autor original.
+[MIT](LICENSE), covering the modifications and additions in this repository.
+The upstream project was published without an explicit license — inherited
+material remains under its original author's terms.
 
-## Créditos
+## Credits
 
-Derivado de [Isshi0417/quickshell-rice](https://github.com/Isshi0417/quickshell-rice),
-com correções e mudanças substanciais: detecção real de hardware no lugar de
-valores fixos, resolução de monitor em todas as janelas, menu de contexto e
-arraste da dock funcionando, dock com auto-hide, indicadores que só aparecem se
-o hardware existir, e a remoção do escalonamento por `sudo` que o instalador
-original disparava em loop.
+Derived from [Isshi0417/quickshell-rice](https://github.com/Isshi0417/quickshell-rice),
+with fixes and substantial changes: real hardware detection instead of
+hardcoded values, explicit monitor assignment across every window, a working
+dock context menu and drag-to-reorder, auto-hiding dock, indicators that only
+appear when the hardware actually exists, and the removal of the `sudo`
+escalation the original installer triggered in a loop.
