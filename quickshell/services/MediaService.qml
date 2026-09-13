@@ -7,7 +7,36 @@ Item {
     id: root
 
     property string playerName: ""
-    property string playerDisplayName: getDisplayName(playerName)
+    // playerctl only reports the D-Bus bus name ("plasma-browser-integration"),
+    // while MPRIS carries the app's real name in the Identity property
+    // ("Brave"). Fetched over D-Bus whenever the active player changes.
+    property string playerIdentity: ""
+    property string playerDisplayName: playerIdentity !== "" ? playerIdentity : getDisplayName(playerName)
+
+    onPlayerNameChanged: {
+        root.playerIdentity = ""
+        if (playerName !== "") {
+            identityProc.running = false
+            identityProc.command = [
+                "busctl", "--user", "get-property",
+                "org.mpris.MediaPlayer2." + playerName,
+                "/org/mpris/MediaPlayer2",
+                "org.mpris.MediaPlayer2", "Identity"
+            ]
+            identityProc.running = true
+        }
+    }
+
+    Process {
+        id: identityProc
+        stdout: SplitParser {
+            onRead: data => {
+                // busctl prints: s "Brave"
+                let match = data.trim().match(/"(.*)"/)
+                if (match && match[1] !== "") root.playerIdentity = match[1]
+            }
+        }
+    }
     property string title: ""
     property string artist: ""
     property string album: ""
