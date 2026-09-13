@@ -1,0 +1,40 @@
+[general]
+import = ["colors.toml"]
+working_directory = "None"
+live_config_reload = true
+
+[env]
+TERM = "xterm-256color"
+WINIT_X11_SCALE_FACTOR = "1.0"
+
+[window]
+dimensions = { columns = 100, lines = 30 }
+dynamic_padding = true
+decorations = "Full"
+opacity = 1.0
+title = "Alacritty"
+class = { instance = "Alacritty", general = "Alacritty" }
+decorations_theme_variant = "Dark"
+
+[scrolling]
+history = 10000
+multiplier = 3
+
+[font]
+normal = { family = "MonoLisa", style = "Regular" }
+bold = { family = "MonoLisa", style = "Bold" }
+italic = { family = "MonoLisa", style = "Italic" }
+bold_italic = { family = "MonoLisa", style = "Bold Italic" }
+size = 12.0
+
+[selection]
+semantic_escape_chars = ",│`|:\"' ()[]{}<>	"
+save_to_clipboard = true
+
+[cursor]
+style = { shape = "Underline", blinking = "Off" }
+unfocused_hollow = true
+thickness = 0.15
+
+[mouse]
+hide_when_typing = true

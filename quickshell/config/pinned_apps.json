@@ -1,0 +1,32 @@
+[
+  {
+    "appId": "systemsettings",
+    "name": "System Settings",
+    "icon": "systemsettings",
+    "cmd": "systemsettings"
+  },
+  {
+    "appId": "org.kde.dolphin",
+    "name": "Dolphin",
+    "icon": "org.kde.dolphin",
+    "cmd": "org.kde.dolphin"
+  },
+  {
+    "appId": "zen-browser",
+    "name": "Zen Browser",
+    "icon": "zen-browser",
+    "cmd": "zen-browser"
+  },
+  {
+    "appId": "antigravity-ide",
+    "name": "Antigravity IDE",
+    "icon": "antigravity-ide",
+    "cmd": "antigravity-ide"
+  },
+  {
+    "appId": "alacritty",
+    "name": "Alacritty",
+    "icon": "Alacritty",
+    "cmd": "alacritty"
+  }
+]

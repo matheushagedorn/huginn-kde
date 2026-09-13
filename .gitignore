@@ -1,0 +1,13 @@
+# Gerado em runtime pelo motor de temas
+alacritty/colors.toml
+fastfetch/config.jsonc
+wallust/**/generated/
+
+# Estado local
+*.bak.*
+*.log
+__pycache__/
+*.pyc
+
+# Cache de wallpapers recoloridos pelo lutgen
+quickshell/wallpapers/**/lutgen_cache/

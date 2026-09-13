@@ -1,0 +1,106 @@
+/* Wallust Auto-generated Zen Browser CSS */
+:root {
+    --zen-main-browser-background: {{background}} !important;
+    --zen-workspace-background: {{background}} !important;
+    --zen-colors-bg: {{background}} !important;
+    --zen-colors-bg-alt: {{background}} !important;
+    --zen-colors-tertiary: {{color0}} !important;
+    --zen-colors-primary: {{color4}} !important;
+    --zen-colors-secondary: {{color5}} !important;
+    --zen-primary-color: {{color4}} !important;
+    --zen-theme-accent: {{color4}} !important;
+    --zen-colors-input-bg: {{color0}} !important;
+    --zen-colors-text: {{foreground}} !important;
+    --zen-colors-border: {{background}} !important;
+    --zen-borders-color: {{background}} !important;
+    --zen-border-color: {{background}} !important;
+    --zen-sidebar-border: {{background}} !important;
+    --zen-sidebar-bg: {{background}} !important;
+    --zen-sidebar-background: {{background}} !important;
+    --zen-sidebar-top-buttons-bg: {{background}} !important;
+    --zen-element-separation: 0px !important;
+    --zen-main-browser-margin: 0px !important;
+    --zen-main-browser-padding: 0px !important;
+    --zen-user-border-radius: 0px !important;
+    
+    --lwt-accent-color: {{background}} !important;
+    --lwt-text-color: {{foreground}} !important;
+    --lwt-sidebar-background: {{background}} !important;
+    --lwt-sidebar-text-color: {{foreground}} !important;
+    
+    --toolbar-bgcolor: {{background}} !important;
+    --toolbar-color: {{foreground}} !important;
+    --toolbar-field-background-color: {{color0}} !important;
+    --toolbar-field-color: {{foreground}} !important;
+    --toolbar-field-focus-background-color: {{color0}} !important;
+    --toolbarbutton-hover-background: {{color0}} !important;
+    
+    --arrowpanel-background: {{color0}} !important;
+    --arrowpanel-color: {{foreground}} !important;
+    --tab-selected-bgcolor: {{color8}} !important;
+    --tab-selected-bg: {{color8}} !important;
+    --urlbar-box-background: {{color0}} !important;
+    --urlbar-background: {{color0}} !important;
+    --chrome-content-separator-color: {{background}} !important;
+    --toolbox-border-bottom-color: {{background}} !important;
+}
+
+*, *::before, *::after {
+    border-color: {{background}} !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+#main-window,
+#navigator-toolbox,
+#nav-bar,
+#PersonalToolbar,
+#urlbar-background,
+#sidebar-box,
+#sidebar-header,
+#sidebar-splitter,
+.sidebar-splitter,
+#TabsToolbar,
+.tab-background[selected],
+.browserStack,
+#appcontent,
+#tabbrowser-tabpanels,
+#zen-main-app-wrapper,
+#browser,
+.browserContainer,
+browser[type="content"],
+deck,
+tabbox,
+vbox,
+hbox,
+#zen-sidebar-top-buttons,
+#zen-sidebar-bottom-buttons,
+#zen-sidebar-icons-wrapper,
+#zen-current-workspace-indicator,
+.sidebar-panel,
+#zen-sidebar-box,
+#zen-appcontent-navbar-container {
+    background: {{background}} !important;
+    background-color: {{background}} !important;
+    color: {{foreground}} !important;
+    border: none !important;
+    border-color: {{background}} !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+#sidebar-splitter,
+.sidebar-splitter {
+    width: 0px !important;
+    min-width: 0px !important;
+    background: {{background}} !important;
+    border: none !important;
+}
+
+#urlbar-input-container,
+#urlbar[focused] > #urlbar-background {
+    background: {{color0}} !important;
+    background-color: {{color0}} !important;
+    border-color: {{color0}} !important;
+    border: none !important;
+}

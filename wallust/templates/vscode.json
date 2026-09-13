@@ -1,0 +1,142 @@
+{
+    "workbench.colorTheme": "Default Dark Modern",
+    "workbench.colorCustomizations": {
+        "editor.background": "{{background}}",
+        "editor.foreground": "{{foreground}}",
+        "sideBar.background": "{{color0}}",
+        "sideBar.foreground": "{{foreground}}",
+        "activityBar.background": "{{background}}",
+        "activityBar.foreground": "{{color4}}",
+        "statusBar.background": "{{background}}",
+        "statusBar.foreground": "{{foreground}}",
+        "titleBar.activeBackground": "{{background}}",
+        "titleBar.activeForeground": "{{foreground}}",
+        "tab.activeBackground": "{{color0}}",
+        "tab.activeForeground": "{{foreground}}",
+        "tab.inactiveBackground": "{{background}}",
+        "tab.inactiveForeground": "{{color8}}",
+        "panel.background": "{{color0}}",
+        "terminal.background": "{{background}}",
+        "terminal.foreground": "{{foreground}}",
+        "list.activeSelectionBackground": "{{color4}}",
+        "list.activeSelectionForeground": "{{background}}",
+        "list.inactiveSelectionBackground": "{{color0}}",
+        "list.inactiveSelectionForeground": "{{foreground}}",
+        "list.hoverBackground": "{{color0}}",
+        "list.highlightForeground": "{{color4}}",
+        "scrollbar.shadow": "{{color8}}",
+        "widget.shadow": "{{color8}}",
+        "editorWidget.background": "{{color0}}",
+        "editorWidget.border": "{{color8}}",
+        "editorWidget.shadow": "{{color8}}",
+        "editorStickyScroll.background": "{{color0}}",
+        "editorStickyScroll.border": "{{color8}}",
+        "editorStickyScroll.shadow": "{{color8}}",
+        "editorStickyScrollHover.background": "{{color8}}"
+    },
+    "editor.tokenColorCustomizations": {
+        "comments": "{{color8}}",
+        "strings": "{{color2}}",
+        "keywords": "{{color5}}",
+        "functions": "{{color4}}",
+        "variables": "{{foreground}}",
+        "numbers": "{{color3}}",
+        "types": "{{color6}}",
+        "textMateRules": [
+            {
+                "scope": ["keyword", "keyword.control", "keyword.operator.new", "keyword.operator.expression", "keyword.operator.logical", "keyword.operator.word", "storage", "storage.type", "storage.modifier", "punctuation.definition.keyword"],
+                "settings": { "foreground": "{{color5}}" }
+            },
+            {
+                "scope": ["entity.name.function", "entity.name.function.member", "entity.name.method", "support.function", "support.function.builtin", "support.function.magic", "meta.function-call", "meta.function-call.generic", "meta.method-call"],
+                "settings": { "foreground": "{{color4}}" }
+            },
+            {
+                "scope": ["entity.name.type", "entity.name.class", "entity.name.struct", "entity.name.enum", "entity.name.namespace", "entity.name.module", "entity.other.inherited-class", "support.type", "support.class", "support.class.builtin", "support.type.python", "support.other.namespace"],
+                "settings": { "foreground": "{{color6}}" }
+            },
+            {
+                "scope": ["string", "string.quoted", "string.quoted.single", "string.quoted.double", "string.quoted.triple", "string.template", "string.interpolated", "punctuation.definition.string", "string.other.link"],
+                "settings": { "foreground": "{{color2}}" }
+            },
+            {
+                "scope": ["comment", "comment.line", "comment.block", "comment.block.documentation", "punctuation.definition.comment"],
+                "settings": { "foreground": "{{color8}}", "fontStyle": "italic" }
+            },
+            {
+                "scope": ["constant", "constant.numeric", "constant.language", "constant.other", "constant.other.caps", "constant.other.symbol", "constant.other.property", "constant.character", "constant.character.escape", "support.constant", "support.constant.python", "support.variable", "support.variable.python", "support.variable.property", "support.other.variable", "variable.other.constant", "variable.other.constant.python", "variable.other.enummember", "variable.readonly", "variable.readonly.defaultLibrary", "entity.name.constant", "entity.name.enummember", "meta.symbol", "boolean"],
+                "settings": { "foreground": "{{color3}}" }
+            },
+            {
+                "scope": ["variable", "variable.other", "variable.other.readwrite", "variable.other.property", "variable.other.object", "variable.other.member", "variable.parameter", "variable.language", "variable.name"],
+                "settings": { "foreground": "{{foreground}}" }
+            }
+        ]
+    },
+    "editor.semanticTokenColorCustomizations": {
+        "enabled": true,
+        "rules": {
+            "variable.readonly": "{{color3}}",
+            "variable.readonly.defaultLibrary": "{{color3}}",
+            "variable.defaultLibrary": "{{color3}}",
+            "variable.constant": "{{color3}}",
+            "property.readonly": "{{color3}}",
+            "property.readonly.defaultLibrary": "{{color3}}",
+            "property.defaultLibrary": "{{color3}}",
+            "enumMember": "{{color3}}",
+            "macro": "{{color5}}",
+            "parameter": "{{foreground}}",
+            "property": "{{foreground}}",
+            "variable": "{{foreground}}",
+            "function": "{{color4}}",
+            "function.defaultLibrary": "{{color4}}",
+            "method": "{{color4}}",
+            "type": "{{color6}}",
+            "type.defaultLibrary": "{{color6}}",
+            "class": "{{color6}}",
+            "class.defaultLibrary": "{{color6}}",
+            "interface": "{{color6}}",
+            "enum": "{{color6}}",
+            "struct": "{{color6}}",
+            "namespace": "{{color6}}",
+            "keyword": "{{color5}}",
+            "comment": "{{color8}}",
+            "string": "{{color2}}",
+            "number": "{{color3}}",
+            "operator": "{{color4}}"
+        },
+        "[Default Dark Modern]": {
+            "enabled": true,
+            "rules": {
+                "variable.readonly": "{{color3}}",
+                "variable.readonly.defaultLibrary": "{{color3}}",
+                "variable.defaultLibrary": "{{color3}}",
+                "variable.constant": "{{color3}}",
+                "property.readonly": "{{color3}}",
+                "property.readonly.defaultLibrary": "{{color3}}",
+                "property.defaultLibrary": "{{color3}}",
+                "enumMember": "{{color3}}",
+                "macro": "{{color5}}",
+                "parameter": "{{foreground}}",
+                "property": "{{foreground}}",
+                "variable": "{{foreground}}",
+                "function": "{{color4}}",
+                "function.defaultLibrary": "{{color4}}",
+                "method": "{{color4}}",
+                "type": "{{color6}}",
+                "type.defaultLibrary": "{{color6}}",
+                "class": "{{color6}}",
+                "class.defaultLibrary": "{{color6}}",
+                "interface": "{{color6}}",
+                "enum": "{{color6}}",
+                "struct": "{{color6}}",
+                "namespace": "{{color6}}",
+                "keyword": "{{color5}}",
+                "comment": "{{color8}}",
+                "string": "{{color2}}",
+                "number": "{{color3}}",
+                "operator": "{{color4}}"
+            }
+        }
+    }
+}

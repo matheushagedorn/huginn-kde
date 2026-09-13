@@ -1,0 +1,80 @@
+/* Wallust Auto-generated Discord / Equibop CSS (Catppuccin Architecture) */
+.visual-refresh.theme-dark, .visual-refresh .theme-dark, .theme-dark, .theme-light, :root, html, body {
+    --brand-500: {{color4}} !important;
+    --brand-530: {{color4}} !important;
+    --brand-560: {{color4}} !important;
+    --brand-600: {{color4}} !important;
+    --brand-630: {{color4}} !important;
+    --brand-700: {{color4}} !important;
+    --brand-experiment: {{color4}} !important;
+    --accent-color: {{color4}} !important;
+
+    --__header-bar-background: {{color0}} !important;
+    --text-normal: {{foreground}} !important;
+    --text-default: {{foreground}} !important;
+    --text-muted: {{foreground}} !important;
+    --text-link: {{color4}} !important;
+    --text-brand: {{color4}} !important;
+    --text-strong: {{foreground}} !important;
+    --text-subtle: {{foreground}} !important;
+    --text-primary: {{foreground}} !important;
+    --text-secondary: {{foreground}} !important;
+    --header-primary: {{foreground}} !important;
+    --header-secondary: {{foreground}} !important;
+
+    --app-frame-background: {{background}} !important;
+    --background-secondary-alt: {{color0}} !important;
+    --background-accent: {{color8}} !important;
+    --background-surface-highest: {{color8}} !important;
+    --background-surface-higher: {{color0}} !important;
+    --background-surface-high: {{color0}} !important;
+    --background-base-lowest: {{background}} !important;
+    --background-base-lower: {{color0}} !important;
+    --background-base-low: {{color0}} !important;
+    --bg-surface-raised: {{color0}} !important;
+    --background-gradient-highest: {{color0}} !important;
+
+    --home-background: {{background}} !important;
+    --chat-background: {{background}} !important;
+    --chat-background-default: {{background}} !important;
+    --chat-border: {{background}} !important;
+    --chat-text-muted: {{foreground}} !important;
+
+    --border-muted: {{color8}} !important;
+    --border-strong: {{color0}} !important;
+    --border-normal: {{background}} !important;
+    --border-subtle: {{background}} !important;
+
+    --custom-channel-members-bg: {{color0}} !important;
+    --card-background-default: {{color0}} !important;
+    --modal-background: {{color0}} !important;
+    --modal-footer-background: {{background}} !important;
+
+    --input-background-default: {{background}} !important;
+    --input-text-default: {{foreground}} !important;
+    --input-placeholder-text-default: {{foreground}} !important;
+    --background-code: {{color0}} !important;
+
+    --channels-default: {{foreground}} !important;
+    --channel-icon: {{foreground}} !important;
+    --channeltextarea-background: {{color0}} !important;
+    --icon-muted: {{foreground}} !important;
+    --icon-default: {{foreground}} !important;
+    --icon-strong: {{foreground}} !important;
+    --icon-subtle: {{foreground}} !important;
+    --icon-primary: {{foreground}} !important;
+    --icon-secondary: {{foreground}} !important;
+
+    --interactive-normal: {{foreground}} !important;
+    --interactive-hover: {{color4}} !important;
+    --interactive-active: {{color4}} !important;
+    --interactive-muted: {{foreground}} !important;
+    --interactive-icon-default: {{foreground}} !important;
+    --interactive-icon-hover: {{color4}} !important;
+    --interactive-icon-active: {{color4}} !important;
+    --interactive-text-default: {{foreground}} !important;
+    --interactive-text-hover: {{color4}} !important;
+    --interactive-text-active: {{color4}} !important;
+
+    --user-profile-overlay-background: {{color0}} !important;
+}

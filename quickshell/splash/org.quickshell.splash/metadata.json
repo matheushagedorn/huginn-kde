@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "antigravity@google.com",
+                "Name": "QuickShell"
+            }
+        ],
+        "Description": "Dynamic theme-following splash screen for KDE Plasma 6",
+        "Id": "org.quickshell.splash",
+        "License": "GPLv2+",
+        "Name": "QuickShell Dynamic Splash",
+        "ServiceTypes": [
+            "KPackage/Package"
+        ],
+        "Version": "1.0"
+    }
+}
