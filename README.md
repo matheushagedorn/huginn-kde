@@ -9,6 +9,22 @@ report what he saw. Which is roughly what a status bar does.
 > Most QuickShell rices out there target Hyprland or Niri. This one runs **on
 > top of KDE Plasma**, coexisting with KWin instead of replacing it.
 
+![Huginn desktop](screenshots/desktop.png)
+
+## Screenshots
+
+The application launcher, with search, category filters and a built-in calculator:
+
+![Application launcher](screenshots/launcher.png)
+
+The top bar — weather, clock, media player and system tray:
+
+![Top bar](screenshots/topbar.png)
+
+The dock, which stays hidden until the pointer reaches the bottom edge:
+
+![Dock](screenshots/dock.png)
+
 ## What's included
 
 - **Top bar** — weather, clock with calendar, media player, system tray,
