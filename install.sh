@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Huginn — instalador
-# Shell de desktop em QuickShell para KDE Plasma (Wayland)
+# Huginn — installer
+# QuickShell desktop shell for KDE Plasma (Wayland)
 # ==============================================================================
 
 set -eo pipefail
@@ -11,8 +11,8 @@ YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 
 info()    { echo -e "${CYAN}${BOLD}[info]${NC} $1"; }
 success() { echo -e "${GREEN}${BOLD}[ok]${NC} $1"; }
-warn()    { echo -e "${YELLOW}${BOLD}[aviso]${NC} $1"; }
-error()   { echo -e "${RED}${BOLD}[erro]${NC} $1"; exit 1; }
+warn()    { echo -e "${YELLOW}${BOLD}[warn]${NC} $1"; }
+error()   { echo -e "${RED}${BOLD}[error]${NC} $1"; exit 1; }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -23,29 +23,29 @@ MISSING_DEPS=()
 
 echo -e "${BOLD}${CYAN}"
 echo "=================================================="
-echo "   Huginn — QuickShell desktop shell para KDE     "
+echo "   Huginn — QuickShell desktop shell for KDE      "
 echo "=================================================="
 echo -e "${NC}"
 
 # ------------------------------------------------------------------------------
-# 1. Checagem de ambiente
+# 1. Environment check
 # ------------------------------------------------------------------------------
 check_environment() {
-    [ -n "$WAYLAND_DISPLAY" ] || warn "Sessão não parece ser Wayland. O Huginn depende de wlr-layer-shell."
+    [ -n "$WAYLAND_DISPLAY" ] || warn "This doesn't look like a Wayland session. Huginn relies on wlr-layer-shell."
 
     if ! command -v kwriteconfig6 &>/dev/null; then
-        warn "kwriteconfig6 não encontrado — isto foi feito para KDE Plasma 6."
+        warn "kwriteconfig6 not found — this was built for KDE Plasma 6."
     fi
 
-    command -v quickshell &>/dev/null || error "quickshell não encontrado. Instale-o antes (AUR: quickshell / quickshell-git)."
-    success "QuickShell encontrado em $(command -v quickshell)"
+    command -v quickshell &>/dev/null || error "quickshell not found. Install it first (AUR: quickshell / quickshell-git)."
+    success "QuickShell found at $(command -v quickshell)"
 }
 
 # ------------------------------------------------------------------------------
-# 2. Dependências
+# 2. Dependencies
 # ------------------------------------------------------------------------------
 install_dependencies() {
-    info "Instalando dependências..."
+    info "Installing dependencies..."
 
     if command -v pacman &>/dev/null; then
         sudo pacman -S --needed --noconfirm \
@@ -54,7 +54,7 @@ install_dependencies() {
             networkmanager bluez bluez-utils \
             wl-clipboard cliphist libnotify lm_sensors jq curl \
             papirus-icon-theme fastfetch \
-            || warn "pacman terminou com avisos — confira as dependências abaixo."
+            || warn "pacman finished with warnings — check the dependency report below."
     elif command -v dnf &>/dev/null; then
         sudo dnf install -y \
             python3 python3-dbus python3-pillow \
@@ -62,7 +62,7 @@ install_dependencies() {
             NetworkManager bluez \
             wl-clipboard cliphist libnotify lm_sensors jq curl \
             papirus-icon-theme fastfetch \
-            || warn "dnf terminou com avisos — confira as dependências abaixo."
+            || warn "dnf finished with warnings — check the dependency report below."
     elif command -v apt-get &>/dev/null; then
         sudo apt-get update
         sudo apt-get install -y \
@@ -71,41 +71,41 @@ install_dependencies() {
             network-manager bluez \
             wl-clipboard cliphist libnotify-bin lm-sensors jq curl \
             papirus-icon-theme fastfetch \
-            || warn "apt terminou com avisos — confira as dependências abaixo."
+            || warn "apt finished with warnings — check the dependency report below."
     else
-        warn "Gerenciador de pacotes não reconhecido. Instale as dependências à mão (veja o README)."
+        warn "Unrecognized package manager. Install the dependencies manually (see the README)."
     fi
 }
 
-# O instalador original engolia falhas de pacote em silêncio e a funcionalidade
-# sumia sem erro visível. Aqui cada dependência crítica é verificada de verdade.
+# The original installer swallowed package failures, so entire features would
+# silently do nothing. Here every critical dependency is actually verified.
 verify_dependencies() {
-    info "Verificando dependências críticas..."
+    info "Verifying critical dependencies..."
 
-    python3 -c "import dbus" 2>/dev/null || MISSING_DEPS+=("python-dbus (sem ele o dock não mostra janelas abertas)")
-    command -v playerctl   &>/dev/null || MISSING_DEPS+=("playerctl (controle de mídia na barra)")
-    command -v wpctl       &>/dev/null || MISSING_DEPS+=("wireplumber/wpctl (volume)")
-    command -v brightnessctl &>/dev/null || MISSING_DEPS+=("brightnessctl (brilho)")
-    command -v nmcli       &>/dev/null || MISSING_DEPS+=("NetworkManager/nmcli (rede)")
+    python3 -c "import dbus" 2>/dev/null || MISSING_DEPS+=("python-dbus (without it the dock can't see open windows)")
+    command -v playerctl     &>/dev/null || MISSING_DEPS+=("playerctl (media controls in the bar)")
+    command -v wpctl         &>/dev/null || MISSING_DEPS+=("wireplumber/wpctl (volume)")
+    command -v brightnessctl &>/dev/null || MISSING_DEPS+=("brightnessctl (brightness)")
+    command -v nmcli         &>/dev/null || MISSING_DEPS+=("NetworkManager/nmcli (network)")
 
     if [ ${#MISSING_DEPS[@]} -eq 0 ]; then
-        success "Todas as dependências críticas presentes."
+        success "All critical dependencies present."
     else
-        warn "Faltando:"
+        warn "Missing:"
         for dep in "${MISSING_DEPS[@]}"; do echo "    - $dep"; done
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 3. Tema de ícones na pasta do usuário
+# 3. Icon theme in the user's directory
 #
-# IMPORTANTE: o papirus-folders se auto-eleva com sudo quando o tema está em
-# /usr/share/icons. Rodando a partir de um serviço (sem TTY) isso falha em loop
-# e o pam_faillock chega a travar a conta. Copiar para ~/.local/share/icons
-# resolve na raiz: nenhuma operação de ícone precisa de root.
+# IMPORTANT: papirus-folders escalates itself with sudo when the icon theme
+# lives in /usr/share/icons. Called from a service (no TTY) that fails in a
+# loop, and pam_faillock will eventually lock the account. Copying the theme to
+# ~/.local/share/icons fixes it at the root: no icon operation needs root.
 # ------------------------------------------------------------------------------
 setup_icon_theme() {
-    info "Copiando Papirus para a pasta do usuário (evita escalonamento por sudo)..."
+    info "Copying Papirus into the user's directory (avoids sudo escalation)..."
     mkdir -p "$DATA_DIR/icons"
 
     local copied=0
@@ -117,14 +117,14 @@ setup_icon_theme() {
     done
 
     if [ "$copied" -gt 0 ]; then
-        success "$copied tema(s) de ícone copiado(s) para $DATA_DIR/icons"
+        success "$copied icon theme(s) copied to $DATA_DIR/icons"
     else
-        info "Temas de ícone já presentes na pasta do usuário."
+        info "Icon themes already present in the user's directory."
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 4. Configurações
+# 4. Configuration
 # ------------------------------------------------------------------------------
 safe_link() {
     local src="$1" dst="$2"
@@ -132,17 +132,17 @@ safe_link() {
         unlink "$dst"
     elif [ -e "$dst" ]; then
         local backup="${dst}.bak.$(date +%Y%m%d%H%M%S)"
-        warn "$(basename "$dst") já existia — movido para $(basename "$backup")"
+        warn "$(basename "$dst") already existed — moved to $(basename "$backup")"
         mv "$dst" "$backup"
     fi
     ln -s "$src" "$dst"
 }
 
 deploy_configs() {
-    info "Ligando configurações em $CONFIG_DIR..."
+    info "Linking configuration into $CONFIG_DIR..."
     mkdir -p "$CONFIG_DIR"
 
-    # Symlink para o repositório: git pull atualiza a config direto.
+    # Symlinked to the repository, so git pull updates the config directly.
     safe_link "$SCRIPT_DIR/quickshell" "$CONFIG_DIR/quickshell"
 
     for dir in alacritty fastfetch wallust; do
@@ -154,11 +154,11 @@ deploy_configs() {
     chmod +x "$SCRIPT_DIR/quickshell/toggle_launcher.sh" 2>/dev/null || true
     chmod +x "$SCRIPT_DIR/quickshell/services/python/"*.py 2>/dev/null || true
 
-    success "Configurações ligadas."
+    success "Configuration linked."
 }
 
 deploy_kde_colorschemes() {
-    info "Instalando esquemas de cor do KDE..."
+    info "Installing KDE color schemes..."
     mkdir -p "$DATA_DIR/color-schemes" "$DATA_DIR/konsole"
 
     if [ -d "$SCRIPT_DIR/kde/color-schemes" ]; then
@@ -168,24 +168,24 @@ deploy_kde_colorschemes() {
         cp "$SCRIPT_DIR/kde/konsole/"*.colorscheme "$DATA_DIR/konsole/" 2>/dev/null || true
     fi
 
-    success "Esquemas de cor instalados."
+    success "Color schemes installed."
 }
 
 deploy_wallpapers() {
     local wp_base="$HOME/Pictures/Wallpapers"
     if [ -d "$SCRIPT_DIR/quickshell/wallpapers" ]; then
-        info "Copiando wallpapers para $wp_base..."
+        info "Copying wallpapers to $wp_base..."
         mkdir -p "$wp_base"
         cp -rn "$SCRIPT_DIR/quickshell/wallpapers/"* "$wp_base/" 2>/dev/null || true
-        success "Wallpapers copiados."
+        success "Wallpapers copied."
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 5. Scripts auxiliares (usados pelos atalhos de teclado)
+# 5. Helper scripts (used by the keyboard shortcuts)
 # ------------------------------------------------------------------------------
 setup_helper_scripts() {
-    info "Instalando scripts auxiliares em $LOCAL_BIN..."
+    info "Installing helper scripts into $LOCAL_BIN..."
     mkdir -p "$LOCAL_BIN"
 
     cat > "$LOCAL_BIN/huginn-volume-up" <<'EOF'
@@ -209,14 +209,14 @@ quickshell ipc call launcher toggle
 EOF
 
     chmod +x "$LOCAL_BIN"/huginn-*
-    success "Scripts instalados."
+    success "Helper scripts installed."
 }
 
 # ------------------------------------------------------------------------------
-# 6. Serviço systemd
+# 6. systemd service
 # ------------------------------------------------------------------------------
 setup_systemd_service() {
-    info "Configurando serviço do usuário..."
+    info "Setting up the user service..."
     local service_dir="$CONFIG_DIR/systemd/user"
     mkdir -p "$service_dir"
 
@@ -242,41 +242,41 @@ WantedBy=graphical-session.target
 EOF
 
     systemctl --user daemon-reload
-    systemctl --user enable huginn.service >/dev/null 2>&1 || warn "Não foi possível habilitar o serviço automaticamente."
-    systemctl --user restart huginn.service || warn "Não foi possível iniciar o serviço automaticamente."
+    systemctl --user enable huginn.service >/dev/null 2>&1 || warn "Could not enable the service automatically."
+    systemctl --user restart huginn.service || warn "Could not start the service automatically."
 
-    success "Serviço configurado (huginn.service)."
+    success "Service configured (huginn.service)."
 }
 
 # ------------------------------------------------------------------------------
-# 7. Desativa o OSD nativo de volume do Plasma (opcional, pergunta antes)
+# 7. Disable Plasma's native volume OSD (optional, asks first)
 #
-# Quem dispara o OSD nativo é o módulo audioshortcutsservice do kded — ele
-# também é quem processa as teclas de volume. Desligá-lo evita o OSD duplicado,
-# mas exige reapontar as teclas para os scripts do Huginn (passo manual, no fim).
+# The native OSD is triggered by the kded module audioshortcutsservice, which
+# also handles the volume keys. Disabling it avoids the duplicate OSD, but
+# requires rebinding the keys to Huginn's scripts (manual step, listed at the end).
 # ------------------------------------------------------------------------------
 disable_native_volume_osd() {
     echo
-    read -r -p "$(echo -e "${BOLD}Desativar o OSD de volume nativo do Plasma? [s/N]${NC} ")" answer
+    read -r -p "$(echo -e "${BOLD}Disable Plasma's native volume OSD? [y/N]${NC} ")" answer
     case "$answer" in
-        [sS]|[sS][iI][mM]|[yY]|[yY][eE][sS])
+        [yY]|[yY][eE][sS])
             if command -v qdbus6 &>/dev/null; then
                 qdbus6 org.kde.kded6 /kded org.kde.kded6.setModuleAutoloading audioshortcutsservice false >/dev/null 2>&1 || true
                 qdbus6 org.kde.kded6 /kded org.kde.kded6.unloadModule audioshortcutsservice >/dev/null 2>&1 || true
-                success "OSD nativo desativado (persiste em ~/.config/kded6rc)."
-                warn "Reaponte as teclas de volume — instruções no fim."
+                success "Native OSD disabled (persisted in ~/.config/kded6rc)."
+                warn "Rebind the volume keys — instructions at the end."
             else
-                warn "qdbus6 não encontrado, pulando."
+                warn "qdbus6 not found, skipping."
             fi
             ;;
         *)
-            info "Mantendo o OSD nativo. Você verá dois OSDs ao mudar o volume."
+            info "Keeping the native OSD. You'll see two OSDs when changing volume."
             ;;
     esac
 }
 
 # ------------------------------------------------------------------------------
-# Execução
+# Run
 # ------------------------------------------------------------------------------
 check_environment
 install_dependencies
@@ -291,24 +291,24 @@ disable_native_volume_osd
 
 echo
 echo -e "${GREEN}${BOLD}=================================================="
-echo "   Huginn instalado                               "
+echo "   Huginn installed                               "
 echo -e "==================================================${NC}"
 echo
-echo -e "${BOLD}Atalhos de teclado (System Settings → Keyboard → Shortcuts → Add New → Command or Script):${NC}"
-echo "  Launcher      →  $LOCAL_BIN/huginn-launcher        (sugestão: Meta)"
-echo "  Volume +      →  $LOCAL_BIN/huginn-volume-up       (tecla física de volume)"
-echo "  Volume -      →  $LOCAL_BIN/huginn-volume-down     (tecla física de volume)"
-echo "  Mudo          →  $LOCAL_BIN/huginn-volume-mute     (tecla física de mudo)"
+echo -e "${BOLD}Keyboard shortcuts (System Settings → Keyboard → Shortcuts → Add New → Command or Script):${NC}"
+echo "  Launcher      →  $LOCAL_BIN/huginn-launcher        (suggested: Meta)"
+echo "  Volume up     →  $LOCAL_BIN/huginn-volume-up       (physical volume key)"
+echo "  Volume down   →  $LOCAL_BIN/huginn-volume-down     (physical volume key)"
+echo "  Mute          →  $LOCAL_BIN/huginn-volume-mute     (physical mute key)"
 echo
-echo -e "${BOLD}Comandos úteis:${NC}"
+echo -e "${BOLD}Useful commands:${NC}"
 echo "  systemctl --user restart huginn.service"
 echo "  journalctl --user -u huginn.service -f"
 echo
-echo -e "${BOLD}Para deixar a barra do Plasma fora do caminho:${NC}"
-echo "  clique direito no painel do KDE → Remove Panel"
+echo -e "${BOLD}To get the Plasma panel out of the way:${NC}"
+echo "  right-click the KDE panel → Remove Panel"
 echo
 
 if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
-    warn "Dependências pendentes (instale antes de usar):"
+    warn "Pending dependencies (install before using):"
     for dep in "${MISSING_DEPS[@]}"; do echo "    - $dep"; done
 fi

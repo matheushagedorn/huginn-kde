@@ -22,9 +22,10 @@ SOFTWARE.
 
 ---
 
-Nota sobre a origem
+Note on provenance
 
-Este projeto é derivado de https://github.com/Isshi0417/quickshell-rice, que
-foi publicado sem licença explícita. A licença MIT acima cobre as modificações
-e adições feitas neste repositório; o material herdado do projeto original
-permanece sob os termos definidos (ou não definidos) por seu autor.
+This project is derived from https://github.com/Isshi0417/quickshell-rice,
+which was published without an explicit license. The MIT license above covers
+the modifications and additions made in this repository; material inherited
+from the original project remains under the terms defined (or left undefined)
+by its author.

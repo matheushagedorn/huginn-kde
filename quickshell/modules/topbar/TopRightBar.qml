@@ -390,7 +390,7 @@ GlassPanel {
             }
         }
 
-        // Battery Icon Snippet removida: este PC é desktop, sem bateria.
+        // Battery icon removed: this is a desktop, there is no battery.
     }
 
     // Screenshot & Screen Recording Control Detached Popup Window

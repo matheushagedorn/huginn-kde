@@ -123,7 +123,7 @@ Item {
 
                     property string appId: modelData.appId
 
-                    // Separador entre os apps fixados e os apps abertos (não fixados)
+                    // Separator between pinned apps and open (unpinned) ones
                     Rectangle {
                         visible: index > 0 && !modelData.isPinned && TaskService.allDockApps[index - 1].isPinned
                         width: 1
@@ -314,7 +314,7 @@ Item {
                             } else if (mouse.button === Qt.LeftButton) {
                                 let instances = TaskService.isRunning(modelData.appId) ? TaskService.getWindowsForApp(modelData.appId) : []
                                 if (instances && instances.length > 1) {
-                                    // Mais de uma janela: mostra os cartões pra escolher, só ao clicar.
+                                    // More than one window: show the picker cards, on click only.
                                     let targetParent = root.dockWindow ? root.dockWindow.contentItem : root
                                     let pt = itemMouse.mapToItem(targetParent, 0, 0)
                                     root.previewTargetX = Math.round(pt.x + itemMouse.width / 2)
@@ -384,9 +384,9 @@ Item {
         }
 
         // 1b. Some apps report a window class that doesn't match their .desktop
-        // id at all (ex.: Heroic reporta "com.heroicgameslauncher.hgl" pro KWin,
-        // mas o .desktop instalado é "heroic"). Tenta por substring nos apps
-        // conhecidos antes de cair no ícone genérico.
+        // id at all (Heroic reports "com.heroicgameslauncher.hgl" to KWin, but
+        // the installed .desktop is "heroic"). Try a substring match against
+        // known apps before falling back to the generic icon.
         if (AppLauncherService.allApps) {
             for (let i = 0; i < AppLauncherService.allApps.length; i++) {
                 let app = AppLauncherService.allApps[i]
@@ -845,10 +845,9 @@ Item {
         visible: false
         color: "transparent"
 
-        // Tamanho fixo (cobrindo o caso com todas as opções visíveis): a
-        // superfície do popup não redimensiona corretamente quando o
-        // conteúdo muda depois de já ter sido criada, então um tamanho
-        // dinâmico causava sobreposição de texto ao trocar de app.
+        // Fixed size, dimensioned for the case where every option is visible:
+        // the popup surface doesn't resize properly once created, so a
+        // content-driven size made the text overlap when switching apps.
         implicitWidth: 160
         implicitHeight: 140
 

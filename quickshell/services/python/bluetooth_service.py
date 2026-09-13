@@ -12,7 +12,7 @@ def scan_bluetooth():
     }
 
     # 0/1. Check for a real adapter and the rfkill power state in the same call:
-    # rfkill não lista nada quando não existe hardware de bluetooth.
+    # rfkill lists nothing at all when there is no bluetooth hardware.
     try:
         rf = subprocess.check_output(
             ['rfkill', 'list', 'bluetooth'],

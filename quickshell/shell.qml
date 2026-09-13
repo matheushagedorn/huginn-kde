@@ -44,8 +44,8 @@ Scope {
         }
     }
 
-    // Monitor primário (confirmado via kscreen-doctor -o), usado por todas
-    // as janelas abaixo para não caírem em telas diferentes por padrão.
+    // Primary monitor (confirm yours with kscreen-doctor -o). Every window
+    // below points at it, otherwise each one lands on a different screen.
     property var primaryScreen: Quickshell.screens.find(s => s.name === "DP-2") || Quickshell.screens[0]
 
     // Dynamic Theme Wallpaper (Layer: Background)
@@ -94,8 +94,8 @@ Scope {
             right: 10
         }
 
-        // Reserva espaço de verdade: como fica sempre visível, a janela
-        // maximizada deve começar abaixo dela, não por baixo escondida.
+        // Reserves real screen space: since the bar is always visible, a
+        // maximized window should start below it, not hidden underneath.
         WlrLayershell.layer: WlrLayershell.Top
         implicitHeight: 40
         color: "transparent"
@@ -132,11 +132,11 @@ Scope {
             bottom: 0
         }
 
-        // Não reserva espaço na tela: janelas maximizadas usam a tela
-        // inteira e a dock some sozinha. O mask restringe o que realmente
-        // recebe hover/clique: só uma faixa fina na borda quando oculta, a
-        // janela inteira quando revelada (senão qualquer coisa perto do
-        // fundo da tela reabria a dock à toa).
+        // Reserves no screen space: maximized windows get the whole screen
+        // and the dock hides itself. The mask narrows what actually receives
+        // hover/clicks to a thin strip at the edge while hidden, expanding to
+        // the full window once revealed — otherwise anything near the bottom
+        // of the screen would pop the dock open by accident.
         exclusionMode: ExclusionMode.Ignore
         property bool revealed: false
         property int hoverStripHeight: 6
@@ -164,9 +164,9 @@ Scope {
             }
         }
 
-        // Com o menu de contexto aberto, o mouse costuma estar em cima dele
-        // (uma janela separada), não da dock, então a dock não deveria
-        // fechar sozinha enquanto o menu estiver aberto.
+        // While the context menu is open the pointer is usually over it (a
+        // separate window), not over the dock, so the dock shouldn't hide
+        // itself until the menu closes.
         Connections {
             target: PopupService
             function onDockMenuOpenChanged() {
@@ -271,8 +271,8 @@ Scope {
     // Bottom-Right Notification Toast Overlay
     NotificationToast {}
 
-    // Lockscreen overlay do tema desativado: o bloqueio real do Wayland não
-    // deixa nada renderizar por cima da tela de bloqueio de verdade, então
-    // esse overlay só aparecia depois, pedindo senha de novo à toa. A tela
-    // nativa (Breeze) já está estilizada com o esquema Tokyo Night.
+    // The theme's lockscreen overlay is disabled on purpose: Wayland's
+    // session lock stops any ordinary app from drawing over the real lock
+    // screen, so this overlay only showed up afterwards, asking for the
+    // password a second time. The native greeter is used instead.
 }
