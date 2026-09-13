@@ -22,6 +22,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
 
     visible: LockscreenService.isLocked
+    // Opaque backdrop behind the lock overlay, not a palette surface.
     color: "#000000"
 
     // Raw System Wallpaper Image (Hidden from direct view, used as texture source)

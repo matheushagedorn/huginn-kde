@@ -8,8 +8,9 @@ Image {
 
     width: 16
     height: 16
-    sourceSize.width: 16
-    sourceSize.height: 16
+    // Rasterise at the size actually rendered, not a fixed 16.
+    sourceSize.width: Math.round(width)
+    sourceSize.height: Math.round(height)
     fillMode: Image.PreserveAspectFit
 
     source: {

@@ -190,8 +190,8 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 Layout.alignment: Qt.AlignVCenter
                                 color: Theme.fg
-                                font.pixelSize: 15
-                                font.family: "Inter"
+                                font.pixelSize: Theme.fsHead
+                                font.family: Theme.fontFamily
                                 selectionColor: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
                                 selectedTextColor: Theme.fg
                                 clip: true
@@ -201,9 +201,9 @@ PanelWindow {
                                     anchors.fill: parent
                                     verticalAlignment: Text.AlignVCenter
                                     text: "Search apps, calculate, or type commands..."
-                                    color: Theme.comment
-                                    font.pixelSize: 15
-                                    font.family: "Inter"
+                                    color: Theme.textMuted
+                                    font.pixelSize: Theme.fsHead
+                                    font.family: Theme.fontFamily
                                     visible: !searchField.text && !searchField.activeFocus
                                 }
 
@@ -261,8 +261,8 @@ PanelWindow {
                                 Text {
                                     anchors.centerIn: parent
                                     text: "✕"
-                                    color: Theme.comment
-                                    font.pixelSize: 11
+                                    color: Theme.textMuted
+                                    font.pixelSize: Theme.fsBody
                                 }
 
                                 MouseArea {
@@ -292,8 +292,8 @@ PanelWindow {
                             anchors.centerIn: parent
                             text: appGrid.count + " app" + (appGrid.count !== 1 ? "s" : "")
                             color: Theme.accent
-                            font.pixelSize: 12
-                            font.family: "Inter"
+                            font.pixelSize: Theme.fsStrong
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                     }
@@ -323,14 +323,15 @@ PanelWindow {
 
                             Text {
                                 text: searchField.text + " ="
-                                color: Theme.comment
-                                font.pixelSize: 11
+                                color: Theme.textMuted
+                                font.pixelSize: Theme.fsBody
+                                font.family: Theme.fontFamily
                             }
 
                             Text {
                                 text: root.mathResult
                                 color: Theme.accent
-                                font.pixelSize: 18
+                                font.pixelSize: Theme.fsHead
                                 font.weight: Font.Bold
                             }
                         }
@@ -345,8 +346,9 @@ PanelWindow {
                                 id: copyMathBtnText
                                 anchors.centerIn: parent
                                 text: "Copy Result"
-                                color: copyMathMouse.containsMouse ? (Theme.isDark ? Theme.bg : "#ffffff") : Theme.fg
-                                font.pixelSize: 10
+                                color: copyMathMouse.containsMouse ? Theme.accentFg : Theme.fg
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                                 font.weight: Font.Bold
                             }
 
@@ -394,9 +396,9 @@ PanelWindow {
                             id: catLabel
                             anchors.centerIn: parent
                             text: modelData
-                            color: isActive ? (Theme.isDark ? Theme.bg : "#ffffff") : (catMouse.containsMouse ? Theme.accent : Theme.fg)
-                            font.pixelSize: 12
-                            font.family: "Inter"
+                            color: isActive ? Theme.accentFg : (catMouse.containsMouse ? Theme.accent : Theme.fg)
+                            font.pixelSize: Theme.fsStrong
+                            font.family: Theme.fontFamily
                             font.weight: isActive ? Font.Bold : Font.Medium
 
                             Behavior on color { ColorAnimation { duration: 120 } }
@@ -441,9 +443,9 @@ PanelWindow {
                         anchors.centerIn: parent
                         visible: appGrid.count === 0
                         text: "No applications found"
-                        color: Theme.comment
-                        font.pixelSize: 14
-                        font.family: "Inter"
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsSubhead
+                        font.family: Theme.fontFamily
                     }
 
                     delegate: Item {
@@ -472,9 +474,14 @@ PanelWindow {
                                 NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
                             }
 
+                            // Anchored to the top with a fixed two-line label
+                            // slot, so a wrapped name no longer shoves its own
+                            // icon upward and breaks the row's baseline.
                             ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 8
+                                anchors.top: parent.top
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.topMargin: Theme.sp2
+                                spacing: Theme.sp2
                                 width: parent.width - 12
 
                                 // App icon container
@@ -515,7 +522,7 @@ PanelWindow {
                                             anchors.centerIn: parent
                                             text: app.name ? app.name.charAt(0).toUpperCase() : "A"
                                             color: Theme.accent
-                                            font.pixelSize: 18
+                                            font.pixelSize: Theme.fsHead
                                             font.weight: Font.Bold
                                         }
                                     }
@@ -525,10 +532,23 @@ PanelWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.alignment: Qt.AlignHCenter
+                                    // Always two lines tall: one- and two-line
+                                    // names then occupy the same box. Measured
+                                    // from the font, not from the pixel size —
+                                    // a 13px face draws a line taller than 13px.
+                                    Layout.preferredHeight: Math.ceil(nameMetrics.height * 2) + 4
+                                    verticalAlignment: Text.AlignTop
+
+                                    FontMetrics {
+                                        id: nameMetrics
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.fsBody
+                                    }
+
                                     text: app.name
                                     color: isSelected ? Theme.accent : Theme.fg
-                                    font.pixelSize: 11
-                                    font.family: "Inter"
+                                    font.pixelSize: Theme.fsBody
+                                    font.family: Theme.fontFamily
                                     font.weight: isSelected ? Font.Bold : Font.Medium
                                     horizontalAlignment: Text.AlignHCenter
                                     elide: Text.ElideRight
@@ -561,35 +581,35 @@ PanelWindow {
 
                     Text {
                         text: "↑↓←→ Navigate"
-                        color: Theme.comment
-                        font.pixelSize: 10
-                        font.family: "Inter"
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                     }
 
                     Text {
                         text: "•"
-                        color: Theme.comment
-                        font.pixelSize: 10
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
                     }
 
                     Text {
                         text: "↵ Launch"
-                        color: Theme.comment
-                        font.pixelSize: 10
-                        font.family: "Inter"
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                     }
 
                     Text {
                         text: "•"
-                        color: Theme.comment
-                        font.pixelSize: 10
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
                     }
 
                     Text {
                         text: "Esc Close"
-                        color: Theme.comment
-                        font.pixelSize: 10
-                        font.family: "Inter"
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                     }
                 }
             }

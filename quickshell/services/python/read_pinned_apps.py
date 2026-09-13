@@ -4,7 +4,7 @@ import os
 import sys
 
 def read_pinned():
-    user_file = os.path.expanduser('~/.config/quickshell_user_pinned.json')
+    user_file = os.path.expanduser('~/.config/huginn_user_pinned.json')
     template_file = os.path.expanduser('~/.config/quickshell/config/pinned_apps.json')
 
     target = user_file if os.path.exists(user_file) else template_file

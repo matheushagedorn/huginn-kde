@@ -8,7 +8,7 @@ Canvas {
 
     property int weatherCode: 0
     property bool isDay: true
-    property color color: Theme.isDark ? Theme.yellow : "#ea580c"
+    property color color: Theme.warning
 
     onWeatherCodeChanged: requestPaint()
     onIsDayChanged: requestPaint()

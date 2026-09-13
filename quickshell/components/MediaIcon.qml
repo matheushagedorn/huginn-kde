@@ -1,11 +1,12 @@
 import QtQuick
+import "../theme"
 
 Item {
     id: root
     implicitWidth: 14
     implicitHeight: 14
     property string iconType: "play" // "play", "pause", "prev", "next"
-    property color color: "#f8f8f2"
+    property color color: Theme.fg
 
     Canvas {
         id: canvas

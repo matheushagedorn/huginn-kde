@@ -267,9 +267,9 @@ def stream_stats():
         try:
             # Pause system monitoring completely when a fullscreen game or video is active
             is_fullscreen = False
-            if os.path.exists('/tmp/quickshell_is_fullscreen.txt'):
+            if os.path.exists('/tmp/huginn_is_fullscreen.txt'):
                 try:
-                    with open('/tmp/quickshell_is_fullscreen.txt', 'r') as f:
+                    with open('/tmp/huginn_is_fullscreen.txt', 'r') as f:
                         is_fullscreen = (f.read().strip() == '1')
                 except Exception: pass
 

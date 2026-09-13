@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import getpass
 import sys
 import glob
 import json
@@ -14,14 +15,17 @@ import signal
 import atexit
 from gi.repository import GLib
 
-ACTIVE_FILE = "/tmp/quickshell_active_app.txt"
-OPEN_WINS_FILE = "/tmp/quickshell_open_windows.json"
+ACTIVE_FILE = "/tmp/huginn_active_app.txt"
+OPEN_WINS_FILE = "/tmp/huginn_open_windows.json"
 
 _icon_cache = {}
 
 def get_icon_search_dirs():
     theme = 'hicolor'
-    user_name = os.environ.get('USER', 'sho')
+    # Falls back to the real account name instead of a hardcoded one: the
+    # upstream default was the original author's username, which silently
+    # built paths for a user that does not exist here.
+    user_name = os.environ.get('USER') or getpass.getuser()
     kde_cfg = os.path.expanduser('~/.config/kdeglobals')
     if os.path.exists(kde_cfg):
         cp = configparser.ConfigParser(interpolation=None)
@@ -347,7 +351,7 @@ def resolve_app_info(app_id):
     _icon_cache[app_lower] = info
     return info
 
-FULLSCREEN_FILE = "/tmp/quickshell_is_fullscreen.txt"
+FULLSCREEN_FILE = "/tmp/huginn_is_fullscreen.txt"
 
 class ActiveAppService(dbus.service.Object):
     def __init__(self, bus_name):
@@ -469,5 +473,32 @@ def main():
         cleanup_kwin_listener()
         pass
 
+
+def _ensure_single_instance():
+    """Replaces any older copy of this script before starting.
+
+    These watchers are long-lived and were being started from more than one
+    place, so every shell restart left the previous pair running. Seventeen
+    recolor watchers all invoking papirus-folders is how the account got
+    locked by faillock once already.
+    """
+    import glob
+    me = os.path.realpath(__file__)
+    mypid = os.getpid()
+    for entry in glob.glob('/proc/[0-9]*/cmdline'):
+        try:
+            pid = int(entry.split('/')[2])
+            if pid == mypid:
+                continue
+            argv = open(entry, 'rb').read().split(b'\0')
+            if not any(os.path.realpath(a.decode('utf-8', 'replace')) == me
+                       for a in argv if a):
+                continue
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            continue
+
+
 if __name__ == "__main__":
+    _ensure_single_instance()
     main()

@@ -62,13 +62,51 @@ cd ~/Projects/huginn
 updates the configuration directly. Pre-existing configs are moved to
 `.bak.<timestamp>` rather than overwritten.
 
-One manual step remains after installation: create the keyboard shortcuts under
-**System Settings → Keyboard → Shortcuts → Add New → Command or Script**,
-pointing at the scripts in `~/.local/bin/huginn-*`. The installer prints the
-list at the end.
+The installer writes the keyboard shortcuts too, so there is nothing to type
+into System Settings by hand:
+
+| Key | Script |
+|---|---|
+| Meta | `huginn-launcher` |
+| Volume Up / Down / Mute | `huginn-volume-up` / `-down` / `-mute` |
+| unbound | `huginn-lock` |
+
+The scripts go to `~/.local/bin`. **Log out and back in once after installing**:
+KDE builds its keyboard shortcut table when the session starts, so bindings
+written afterwards do nothing until the next login. There is no way around it,
+and no other step is pending.
+
+The installer also releases the same keys from Plasma's own audio shortcuts
+first. Two components claiming one key and neither answers reliably, and
+disabling the `audioshortcutsservice` kded module does not release them: it
+removes what implements them, so the key stays claimed and simply stops working.
+The bindings are listed under **System Settings → Keyboard → Shortcuts** if you
+want to change one.
 
 To keep the dock from fighting the KDE panel for space, remove the native panel
-(right-click it → Remove Panel).
+(right-click it → Remove Panel). Huginn is its own notification server, so
+removing the panel does not cost you notifications: Plasma serves them from the
+panel applet, and without a replacement no notification from any application
+would arrive at all.
+
+### Brightness on external monitors
+
+Brightness for DDC/CI monitors is written straight to `/dev/i2c-N`. `ddcutil
+setvcp` does the same job in about 300ms on this hardware, and only 4ms of that
+is process startup: the rest is its conservative DDC/CI pacing. The direct write
+lands in roughly 40ms, which is what makes the slider track the drag instead of
+catching up after it.
+
+On most systems logind already grants the seat user an ACL on `/dev/i2c-*`, so
+nothing is needed. Check with `getfacl /dev/i2c-1`; if your user is not listed,
+add yourself to the `i2c` group and log back in:
+
+```bash
+sudo usermod -aG i2c "$USER"
+```
+
+Without access, Huginn falls back to `ddcutil` on its own. It still works, just
+with the delay.
 
 ## Customization
 
@@ -76,7 +114,7 @@ To keep the dock from fighting the KDE panel for space, remove the native panel
   yours is named differently (`kscreen-doctor -o` lists them), adjust the
   `screen:` line in `quickshell/shell.qml` and in the launcher and lockscreen
   modules.
-- **Theme** — the active theme lives in `~/.config/quickshell_current_theme.txt`.
+- **Theme** — the active theme lives in `~/.config/huginn_current_theme.txt`.
   Available palettes are defined in `quickshell/theme/Theme.qml` (Tokyo Night,
   Catppuccin, Gruvbox, Nord, Rosé Pine, Everforest, Solarized and more).
 - **Pinned dock apps** — reorder by dragging, or edit

@@ -79,7 +79,7 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         text: "▦"
-                        font.pixelSize: 22
+                        font.pixelSize: Theme.fsTitle
                         font.bold: true
                         color: Theme.fg
                         horizontalAlignment: Text.AlignHCenter
@@ -627,7 +627,8 @@ Item {
                         Text {
                             text: root.previewTargetApp ? root.getCleanProgramName(root.previewTargetApp) : "Windows"
                             color: Theme.fg
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -648,7 +649,8 @@ Item {
                                 anchors.centerIn: parent
                                 text: root.previewWindowInstances ? (root.previewWindowInstances.length + (root.previewWindowInstances.length === 1 ? " Open" : " Open")) : "0"
                                 color: Theme.accent
-                                font.pixelSize: 9
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                                 font.weight: Font.Bold
                             }
                         }
@@ -750,16 +752,18 @@ Item {
                                                 id: cardCaptionText
                                                 text: cardItem.winData ? (cardItem.winData.caption || cardItem.winData.name || "Window") : ""
                                                 color: (cardItem.winData && cardItem.winData.active) ? Theme.accent : Theme.fg
-                                                font.pixelSize: 11
+                                                font.pixelSize: Theme.fsBody
+                                                font.family: Theme.fontFamily
                                                 font.weight: (cardItem.winData && cardItem.winData.active) ? Font.Bold : Font.Medium
                                                 elide: Text.ElideRight
                                                 Layout.fillWidth: true
                                             }
 
                                             Text {
-                                                text: cardItem.winData ? ((cardItem.winData.active) ? "Active Window" : (cardItem.winData.minimized ? "Minimized" : "Click to focus")) : ""
+                                                text: cardItem.winData ? ((cardItem.winData.active) ? "Active window" : (cardItem.winData.minimized ? "Minimized" : "Click to focus")) : ""
                                                 color: (cardItem.winData && cardItem.winData.active) ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.85) : Theme.comment
-                                                font.pixelSize: 9
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 elide: Text.ElideRight
                                                 Layout.fillWidth: true
                                             }
@@ -784,7 +788,7 @@ Item {
                                                      height: 8
                                                      onPaint: {
                                                          let ctx = getContext("2d")
-                                                         ctx.strokeStyle = closeMouse.containsMouse ? "#ffffff" : Theme.comment
+                                                         ctx.strokeStyle = closeMouse.containsMouse ? Theme.fg : Theme.textMuted
                                                          ctx.lineWidth = 1.4
                                                          ctx.beginPath()
                                                          ctx.moveTo(0, 0); ctx.lineTo(8, 8)
@@ -924,7 +928,8 @@ Item {
                     Text {
                         text: root.contextTargetApp ? root.getCleanProgramName(root.contextTargetApp) : "Application"
                         color: Theme.accent
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -950,9 +955,10 @@ Item {
                         anchors.left: parent.left
                         anchors.leftMargin: 8
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Launch New Instance"
+                        text: "Open a new window"
                         color: Theme.fg
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: Font.Medium
                     }
 
@@ -982,7 +988,8 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: (root.contextTargetApp && TaskService.isPinned(root.contextTargetApp.appId)) ? "Unpin from Dock" : "Pin to Dock"
                         color: Theme.fg
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: Font.Medium
                     }
 
@@ -1011,9 +1018,10 @@ Item {
                         anchors.left: parent.left
                         anchors.leftMargin: 8
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "Close Application"
+                        text: "Close application"
                         color: Theme.red
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 

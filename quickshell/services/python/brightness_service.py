@@ -16,11 +16,20 @@ def scan_brightness_devices():
             timeout=1.0
         )
         curr_disp = None
+        curr_bus = None
         for line in out.splitlines():
             if line.startswith('Display '):
                 parts = line.split()
                 if len(parts) >= 2:
                     curr_disp = parts[1].strip()
+                curr_bus = None
+            elif 'I2C bus:' in line and curr_disp:
+                # Addressing the bus directly lets ddcutil skip the display
+                # enumeration it otherwise redoes on every single setvcp,
+                # which was most of the write latency.
+                m_bus = re.search(r'/dev/i2c-(\d+)', line)
+                if m_bus:
+                    curr_bus = m_bus.group(1)
             elif 'Model:' in line and curr_disp:
                 model = line.split('Model:', 1)[1].strip()
                 try:
@@ -36,12 +45,14 @@ def scan_brightness_devices():
                         'id': 'ddc_' + curr_disp,
                         'type': 'ddc',
                         'display_num': curr_disp,
+                        'bus': curr_bus if curr_bus else '',
                         'name': 'External (' + model + ')',
                         'brightness': val
                     })
                 except Exception:
                     pass
                 curr_disp = None
+                curr_bus = None
     except Exception:
         pass
 

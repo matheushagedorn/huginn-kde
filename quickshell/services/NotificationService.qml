@@ -2,89 +2,119 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Notifications
 
+// Huginn is the notification server.
+//
+// It used to only eavesdrop: `notification_service.py` ran `dbus-monitor`
+// filtered on `member='Notify'` and parsed the text output. That needs somebody
+// else to actually own org.freedesktop.Notifications, and on this setup nobody
+// does — Plasma serves notifications from the panel applet, and Huginn's own
+// README tells you to remove the panel. The result was that no notification
+// from any application reached anything at all.
+//
+// Owning the name instead also means notifications can be dismissed and their
+// actions invoked, which snooping could never do.
 Item {
     id: root
 
     property bool isDnd: false
+
+    // Plain objects in the shape the UI already expects: {id, app, summary,
+    // body, time}, newest first. `ref` carries the live Notification so it can
+    // be dismissed properly rather than just dropped from the list.
     property var notifications: []
+
+    readonly property int maxKept: 20
 
     function toggleDnd() {
         isDnd = !isDnd
-        if (isDnd) {
-            dndHoldProc.running = false
-            dndHoldProc.running = true
-            syncProc.command = ["kwriteconfig6", "--file", "plasmanotifyrc", "--group", "Notifications", "--key", "DoNotDisturb", "true"]
-        } else {
-            dndHoldProc.running = false
-            syncProc.command = ["kwriteconfig6", "--file", "plasmanotifyrc", "--group", "Notifications", "--key", "DoNotDisturb", "false"]
-        }
-        syncProc.running = true
     }
 
     function dismissNotification(id) {
-        var arr = []
+        var kept = []
         for (var i = 0; i < notifications.length; i++) {
-            if (notifications[i].id !== id) {
-                arr.push(notifications[i])
+            var entry = notifications[i]
+            if (entry.id === id) {
+                if (entry.ref) entry.ref.dismiss()
+            } else {
+                kept.push(entry)
             }
         }
-        notifications = arr
-        notificationsChanged()
+        notifications = kept
     }
 
     function clearAll() {
-        notifications = []
-        notificationsChanged()
-    }
-
-    Process { id: syncProc }
-
-    // Enforce BottomRight Popup Position for KDE notifications on startup
-    Process {
-        id: initPositionProc
-        command: ["kwriteconfig6", "--file", "plasmanotifyrc", "--group", "Notifications", "--key", "PopupPosition", "BottomRight"]
-        running: true
-    }
-
-    // Disable KDE Plasma default popups so only Quickshell's notification toasts appear
-    Process {
-        id: disableKdePopupsProc
-        command: ["kwriteconfig6", "--file", "plasmanotifyrc", "--group", "Notifications", "--key", "ShowPopups", "false"]
-        running: true
-    }
-
-    // Persistent DBus Notification Inhibitor Process (Suppresses Plasmashell default top-left popups)
-    Process {
-        id: dndProc
-        command: ["python3", "-u", Quickshell.env("HOME") + "/.config/quickshell/services/python/dnd_inhibitor.py"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => root.dndActive = (data.trim() === "true")
+        for (var i = 0; i < notifications.length; i++) {
+            if (notifications[i].ref) notifications[i].ref.dismiss()
         }
+        notifications = []
     }
 
     signal notificationReceived(var notification)
 
-    // Real-Time DBus Notification Monitor Process
-    Process {
-        id: notifProc
-        command: ["python3", "-u", Quickshell.env("HOME") + "/.config/quickshell/services/python/notification_service.py"]
-        running: true
-        stdout: SplitParser {
-            onRead: data => {
-                if (!root.isDnd) {
-                    try {
-                        let parsed = JSON.parse(data.trim())
-                        if (parsed && parsed.id) {
-                            let arr = root.notifications.slice()
-                            arr.unshift(parsed)
-                            if (arr.length > 20) arr.pop()
-                            root.notifications = arr
-                            root.notificationReceived(parsed)
-                        }
-                    } catch (e) {}
+    function formatTime(date) {
+        var h = date.getHours()
+        var m = date.getMinutes()
+        return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m
+    }
+
+    NotificationServer {
+        id: server
+
+        // Held across a config reload, so editing the shell does not wipe the
+        // list or drop notifications that arrive while it reloads.
+        keepOnReload: true
+
+        bodySupported: true
+        bodyMarkupSupported: true
+        imageSupported: true
+        actionsSupported: true
+
+        onNotification: notification => {
+            // Tracked means the server keeps the object alive for us; without
+            // this it is destroyed as soon as this handler returns.
+            notification.tracked = true
+
+            if (root.isDnd) {
+                notification.dismiss()
+                return
+            }
+
+            var entry = {
+                "id": notification.id,
+                "app": notification.appName && notification.appName !== ""
+                       ? notification.appName : "Notification",
+                "summary": notification.summary,
+                "body": notification.body,
+                "time": root.formatTime(new Date()),
+                "ref": notification
+            }
+
+            var arr = root.notifications.slice()
+            arr.unshift(entry)
+            while (arr.length > root.maxKept) {
+                var dropped = arr.pop()
+                if (dropped.ref) dropped.ref.dismiss()
+            }
+            root.notifications = arr
+            root.notificationReceived(entry)
+        }
+    }
+
+    // An application can withdraw its own notification. Drop it from the list
+    // when that happens, instead of leaving a row that no longer exists.
+    Connections {
+        target: server.trackedNotifications
+        function onObjectRemoved(object) {
+            var kept = []
+            for (var i = 0; i < root.notifications.length; i++) {
+                if (root.notifications[i].ref !== object) {
+                    kept.push(root.notifications[i])
                 }
+            }
+            if (kept.length !== root.notifications.length) {
+                root.notifications = kept
             }
         }
     }

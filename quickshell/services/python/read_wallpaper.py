@@ -5,7 +5,7 @@ import sys
 
 def read_wallpaper():
     target_variant = sys.argv[1].strip() if len(sys.argv) > 1 else ""
-    user_file = os.path.expanduser('~/.config/quickshell_user_wallpaper.json')
+    user_file = os.path.expanduser('~/.config/huginn_user_wallpaper.json')
 
     if os.path.exists(user_file):
         try:

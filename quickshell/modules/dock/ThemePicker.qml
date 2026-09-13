@@ -69,7 +69,7 @@ Item {
 
     GlassPanel {
         anchors.fill: parent
-        radius: 16
+        radius: Theme.radiusCard
 
         ColumnLayout {
             anchors.fill: parent
@@ -83,8 +83,8 @@ Item {
                 Text {
                     text: "Themes"
                     color: Theme.fg
-                    font.pixelSize: 15
-                    font.family: "Inter, Sans-Serif"
+                    font.pixelSize: Theme.fsHead
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
@@ -93,8 +93,8 @@ Item {
                 Text {
                     text: Theme.currentVariant
                     color: Theme.accent
-                    font.pixelSize: 11
-                    font.family: "Inter, Sans-Serif"
+                    font.pixelSize: Theme.fsBody
+                    font.family: Theme.fontFamily
                     font.weight: Font.Medium
                 }
             }
@@ -136,8 +136,8 @@ Item {
                                     anchors.centerIn: parent
                                     text: modelData
                                     color: isActiveCat ? Theme.accent : (catMouse.containsMouse ? Theme.fg : Theme.comment)
-                                    font.pixelSize: 11
-                                    font.family: "Inter, Sans-Serif"
+                                    font.pixelSize: Theme.fsBody
+                                    font.family: Theme.fontFamily
                                     font.weight: isActiveCat ? Font.DemiBold : Font.Normal
                                 }
 
@@ -232,8 +232,8 @@ Item {
                                     Text {
                                         text: modelData.name
                                         color: isSelected ? Theme.accent : Theme.fg
-                                        font.pixelSize: 11
-                                        font.family: "Inter, Sans-Serif"
+                                        font.pixelSize: Theme.fsBody
+                                        font.family: Theme.fontFamily
                                         font.weight: isSelected ? Font.DemiBold : Font.Normal
                                         Layout.fillWidth: true
                                         elide: Text.ElideRight

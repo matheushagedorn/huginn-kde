@@ -81,14 +81,14 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: "🔔"
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
                     }
                 }
 
                 Text {
                     text: toastWindow.currentToast ? (toastWindow.currentToast.app || "Notification") : ""
                     color: Theme.accent
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fsStrong
                     font.weight: Font.Bold
                     Layout.fillWidth: true
                     elide: Text.ElideRight
@@ -96,8 +96,9 @@ PanelWindow {
 
                 Text {
                     text: toastWindow.currentToast ? (toastWindow.currentToast.time || "") : ""
-                    color: Theme.comment
-                    font.pixelSize: 10
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fsCaption
+                    font.family: Theme.fontFamily
                     font.weight: Font.Medium
                 }
 
@@ -113,8 +114,8 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: "✕"
-                        color: closeMouse.containsMouse ? "#ffffff" : Theme.comment
-                        font.pixelSize: 10
+                        color: closeMouse.containsMouse ? Theme.fg : Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
                         font.weight: Font.Bold
                     }
 
@@ -131,7 +132,8 @@ PanelWindow {
             Text {
                 text: toastWindow.currentToast ? (toastWindow.currentToast.summary || "") : ""
                 color: Theme.fg
-                font.pixelSize: 13
+                font.pixelSize: Theme.fsSubhead
+                font.family: Theme.fontFamily
                 font.weight: Font.DemiBold
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
@@ -144,7 +146,8 @@ PanelWindow {
             Text {
                 text: toastWindow.currentToast ? (toastWindow.currentToast.body || "") : ""
                 color: Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.8)
-                font.pixelSize: 11
+                font.pixelSize: Theme.fsBody
+                font.family: Theme.fontFamily
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
                 maximumLineCount: 3

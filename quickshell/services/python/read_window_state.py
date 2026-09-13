@@ -4,9 +4,9 @@ import os
 import sys
 
 def read_state():
-    act_file = '/tmp/quickshell_active_app.txt'
-    win_file = '/tmp/quickshell_open_windows.json'
-    fs_file = '/tmp/quickshell_is_fullscreen.txt'
+    act_file = '/tmp/huginn_active_app.txt'
+    win_file = '/tmp/huginn_open_windows.json'
+    fs_file = '/tmp/huginn_is_fullscreen.txt'
 
     act = ''
     if os.path.exists(act_file):

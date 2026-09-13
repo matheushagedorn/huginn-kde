@@ -68,7 +68,7 @@ def generate_all():
 
     for v in variants:
         clean_id = re.sub(r'[^a-zA-Z0-9]', '', v['name'])
-        display_name = f"QS {v['name']}"
+        display_name = f"Huginn {v['name']}"
         
         bg_rgb = fmt_rgb(v['bg'])
         surface_rgb = fmt_rgb(v['surface'])

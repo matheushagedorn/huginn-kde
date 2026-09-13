@@ -1,6 +1,13 @@
 import QtQuick
+import Quickshell.Widgets
 import "../theme"
 
+// Album art, cropped to a disc.
+//
+// The previous version set `radius` on a plain Rectangle with `clip: true`
+// and expected a circle. Qt Quick's clip is rectangular regardless of radius,
+// so the artwork rendered as a square poking out of a rounded border.
+// ClippingRectangle does the rounded clip properly.
 Item {
     id: root
     implicitWidth: 54
@@ -9,59 +16,60 @@ Item {
     property string artUrl: ""
     property real size: Math.min(width, height)
 
-    // Outer Container (1:1 Static Circle)
-    Rectangle {
+    ClippingRectangle {
         width: root.size
         height: root.size
         anchors.centerIn: parent
         radius: root.size / 2
         color: Theme.bg
-        border.color: Theme.currentLine
+        border.color: Theme.separator
         border.width: 1
-        clip: true
 
-        // Web & Local Album Art Image
         Image {
             id: albumImg
             anchors.fill: parent
             source: root.artUrl
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
-            visible: root.artUrl !== "" && status !== Image.Error
+            // Rasterise at the size actually drawn, so a 20px panel thumbnail
+            // does not decode a full-resolution cover.
+            sourceSize.width: Math.round(root.size * 2)
+            sourceSize.height: Math.round(root.size * 2)
+            visible: root.artUrl !== "" && status === Image.Ready
         }
 
-        // Color-themed Fallback Image (Only if artUrl is empty or fails)
+        // Shown while the art loads or when there is none.
         Rectangle {
             anchors.fill: parent
             gradient: Gradient {
                 GradientStop { position: 0.0; color: Theme.accent }
                 GradientStop { position: 1.0; color: Theme.subAccent }
             }
-            visible: root.artUrl === "" || albumImg.status === Image.Error
+            visible: !albumImg.visible
 
-            // Minimal Dynamic Vector Music Icon
             Canvas {
                 id: musicCanvas
                 anchors.fill: parent
                 antialiasing: true
 
+                Connections {
+                    target: Theme
+                    function onAccentFgChanged() { musicCanvas.requestPaint() }
+                }
+
                 onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.reset();
-                    var w = width;
-                    var h = height;
-                    ctx.fillStyle = Theme.isDark ? Theme.bg : "#ffffff";
+                    var ctx = getContext("2d")
+                    ctx.reset()
+                    var w = width
+                    var h = height
+                    ctx.fillStyle = Theme.accentFg
 
-                    // Note Head
-                    ctx.beginPath();
-                    ctx.arc(w * 0.4, h * 0.64, w * 0.13, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.beginPath()
+                    ctx.arc(w * 0.4, h * 0.64, w * 0.13, 0, Math.PI * 2)
+                    ctx.fill()
 
-                    // Note Stem
-                    ctx.fillRect(w * 0.48, h * 0.25, w * 0.08, h * 0.42);
-
-                    // Note Flag
-                    ctx.fillRect(w * 0.48, h * 0.25, w * 0.24, h * 0.09);
+                    ctx.fillRect(w * 0.48, h * 0.25, w * 0.08, h * 0.42)
+                    ctx.fillRect(w * 0.48, h * 0.25, w * 0.24, h * 0.09)
                 }
             }
         }

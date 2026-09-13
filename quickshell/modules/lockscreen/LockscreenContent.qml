@@ -113,9 +113,9 @@ Item {
                     return `${h}:${m}`
                 }
                 color: Theme.fg
-                font.pixelSize: 76
+                font.pixelSize: 76   // display clock, outside the UI scale
                 font.weight: Font.Bold
-                font.family: "Inter, Sans-Serif"
+                font.family: Theme.fontFamily
                 Layout.alignment: Qt.AlignHCenter
 
                 Timer {
@@ -144,19 +144,19 @@ Item {
                         return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`
                     }
                     color: Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.85)
-                    font.pixelSize: 16
+                    font.pixelSize: Theme.fsHead
                     font.weight: Font.DemiBold
-                    font.family: "Inter"
+                    font.family: Theme.fontFamily
                 }
 
-                Text { text: "•"; color: Theme.accent; font.pixelSize: 14 }
+                Text { text: "•"; color: Theme.accent; font.pixelSize: Theme.fsSubhead }
 
                 Text {
                     text: WeatherService.getWeatherIcon(WeatherService.weatherCode) + " " + WeatherService.currentTempStr
-                    color: Theme.comment
-                    font.pixelSize: 15
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fsHead
                     font.weight: Font.Medium
-                    font.family: "Inter"
+                    font.family: Theme.fontFamily
                 }
             }
         }
@@ -179,6 +179,7 @@ Item {
                     id: avatarMask
                     anchors.fill: parent
                     radius: 52
+                    // Mask source for OpacityMask: only its alpha is read.
                     color: "#ffffff"
                     visible: false
                     layer.enabled: true
@@ -241,9 +242,9 @@ Item {
                 Text {
                     text: LockscreenService.username || "User"
                     color: Theme.fg
-                    font.pixelSize: 22
+                    font.pixelSize: Theme.fsTitle
                     font.weight: Font.Bold
-                    font.family: "Inter"
+                    font.family: Theme.fontFamily
                 }
 
                 Rectangle {
@@ -257,11 +258,11 @@ Item {
                     Text {
                         id: statusText
                         anchors.centerIn: parent
-                        text: "LOCKED"
+                        text: "Locked"
                         color: Theme.accent
-                        font.pixelSize: 9
+                        font.pixelSize: Theme.fsCaption
                         font.weight: Font.Bold
-                        font.family: "Inter"
+                        font.family: Theme.fontFamily
                     }
                 }
             }
@@ -335,9 +336,9 @@ Item {
             anchors.centerIn: parent
             visible: LockscreenService.typedCount === 0 && !LockscreenService.isAuthenticating
             text: "Enter password to unlock..."
-            color: Theme.comment
-            font.pixelSize: 14
-            font.family: "Inter"
+            color: Theme.textMuted
+            font.pixelSize: Theme.fsSubhead
+            font.family: Theme.fontFamily
         }
 
         // Authenticating Spinner / Status Text
@@ -346,9 +347,9 @@ Item {
             visible: LockscreenService.isAuthenticating
             text: "Verifying password..."
             color: Theme.accent
-            font.pixelSize: 14
+            font.pixelSize: Theme.fsSubhead
             font.weight: Font.DemiBold
-            font.family: "Inter"
+            font.family: Theme.fontFamily
         }
 
         ListModel {
@@ -433,7 +434,7 @@ Item {
                                             width: 6
                                             height: 6
                                             radius: 3
-                                            color: "#ffffff"
+                                            color: Theme.fg
                                             opacity: index === dotsModel.count - 1 ? 1.0 : 0.6
                                         }
                                     }
@@ -455,8 +456,8 @@ Item {
                             Text {
                                 anchors.centerIn: parent
                                 text: "➔"
-                                color: Theme.isDark ? Theme.bg : "#ffffff"
-                                font.pixelSize: 14
+                                color: Theme.accentFg
+                                font.pixelSize: Theme.fsSubhead
                                 font.weight: Font.Bold
                             }
 
@@ -486,9 +487,9 @@ Item {
                         Text {
                             text: LockscreenService.authErrorMsg
                             color: Theme.red
-                            font.pixelSize: 12
+                            font.pixelSize: Theme.fsStrong
                             font.weight: Font.Bold
-                            font.family: "Inter"
+                            font.family: Theme.fontFamily
                         }
 
                         Item { Layout.fillWidth: true }
@@ -516,8 +517,8 @@ Item {
                             RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
-                                Text { text: "󰒲"; font.pixelSize: 16; font.family: "JetBrainsMono Nerd Font, Symbols Nerd Font, CaskaydiaCove Nerd Font, Sans-Serif"; color: Theme.accent }
-                                Text { text: "Sleep"; color: Theme.fg; font.pixelSize: 13; font.weight: Font.SemiBold; font.family: "Inter" }
+                                Text { text: "󰒲"; font.pixelSize: Theme.fsHead; font.family: Theme.fontIcon; color: Theme.accent }
+                                Text { text: "Sleep"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; font.weight: Font.SemiBold; font.family: Theme.fontFamily }
                             }
 
                             MouseArea {
@@ -545,8 +546,8 @@ Item {
                             RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
-                                Text { text: "󰜉"; font.pixelSize: 16; font.family: "JetBrainsMono Nerd Font, Symbols Nerd Font, CaskaydiaCove Nerd Font, Sans-Serif"; color: Theme.orange }
-                                Text { text: "Restart"; color: Theme.fg; font.pixelSize: 13; font.weight: Font.SemiBold; font.family: "Inter" }
+                                Text { text: "󰜉"; font.pixelSize: Theme.fsHead; font.family: Theme.fontIcon; color: Theme.orange }
+                                Text { text: "Restart"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; font.weight: Font.SemiBold; font.family: Theme.fontFamily }
                             }
 
                             MouseArea {
@@ -574,8 +575,8 @@ Item {
                             RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
-                                Text { text: "󰐥"; font.pixelSize: 16; font.family: "JetBrainsMono Nerd Font, Symbols Nerd Font, CaskaydiaCove Nerd Font, Sans-Serif"; color: Theme.red }
-                                Text { text: "Power Off"; color: Theme.fg; font.pixelSize: 13; font.weight: Font.SemiBold; font.family: "Inter" }
+                                Text { text: "󰐥"; font.pixelSize: Theme.fsHead; font.family: Theme.fontIcon; color: Theme.red }
+                                Text { text: "Power Off"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; font.weight: Font.SemiBold; font.family: Theme.fontFamily }
                             }
 
                             MouseArea {

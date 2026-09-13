@@ -67,7 +67,7 @@ Item {
 
     Process {
         id: checkLockTriggerProc
-        command: ["bash", "-c", "if [ -f /tmp/quickshell_lock_trigger ] || pidof kscreenlocker_greet >/dev/null; then rm -f /tmp/quickshell_lock_trigger; echo 'LOCK'; fi"]
+        command: ["bash", "-c", "if [ -f /tmp/huginn_lock_trigger ] || pidof kscreenlocker_greet >/dev/null; then rm -f /tmp/huginn_lock_trigger; echo 'LOCK'; fi"]
         stdout: SplitParser {
             onRead: data => {
                 if (data.trim() === "LOCK" && !root.isLocked && !root.isUnlocking) {

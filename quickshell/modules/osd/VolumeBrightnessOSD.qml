@@ -69,7 +69,7 @@ PanelWindow {
         anchors.horizontalCenter: parent.horizontalCenter
         width: 230
         height: 48
-        radius: 14
+        radius: Theme.radiusCard
 
         RowLayout {
             anchors.fill: parent
@@ -77,12 +77,26 @@ PanelWindow {
             anchors.rightMargin: 14
             spacing: 12
 
-            Text {
-                text: osdWindow.osdType === "volume" 
-                    ? (osdWindow.isMuted ? "🔇" : (osdWindow.osdValue > 0.5 ? "🔊" : "🔉")) 
-                    : "☀️"
-                font.pixelSize: 15
+            // The rest of the shell draws its indicators from the icon theme;
+            // the OSD was the one place still on colour emoji, which pulled in
+            // Noto Color Emoji and ignored the palette entirely.
+            Item {
+                Layout.preferredWidth: 18
+                Layout.preferredHeight: 18
                 Layout.alignment: Qt.AlignVCenter
+
+                VolumeIcon {
+                    anchors.fill: parent
+                    visible: osdWindow.osdType === "volume"
+                    volume: Math.round(osdWindow.osdValue * 100)
+                    isMuted: osdWindow.isMuted
+                }
+
+                BrightnessIcon {
+                    anchors.fill: parent
+                    visible: osdWindow.osdType === "brightness"
+                    brightness: Math.round(osdWindow.osdValue * 100)
+                }
             }
 
             Rectangle {
@@ -106,7 +120,8 @@ PanelWindow {
             Text {
                 text: Math.round(osdWindow.osdValue * 100) + "%"
                 color: Theme.fg
-                font.pixelSize: 11
+                font.pixelSize: Theme.fsBody
+                font.family: Theme.fontFamily
                 font.weight: Font.Bold
                 Layout.alignment: Qt.AlignVCenter
             }

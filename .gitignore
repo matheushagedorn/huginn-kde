@@ -1,13 +1,14 @@
-# Gerado em runtime pelo motor de temas
-alacritty/colors.toml
+# Generated at runtime by the theme engine
 fastfetch/config.jsonc
 wallust/**/generated/
 
-# Estado local
+# Local state
 *.bak.*
 *.log
 __pycache__/
 *.pyc
 
-# Cache de wallpapers recoloridos pelo lutgen
-quickshell/wallpapers/**/lutgen_cache/
+# Wallpapers are not tracked: they are third-party images and they are large.
+# Put your own under ~/Pictures/Wallpapers/<Theme Name>/ and the wallpaper
+# scanner picks them up. See the README.
+quickshell/wallpapers/

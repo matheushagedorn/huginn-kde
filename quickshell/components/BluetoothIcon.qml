@@ -9,8 +9,8 @@ Image {
 
     width: 16
     height: 16
-    sourceSize.width: width
-    sourceSize.height: height
+    sourceSize.width: Math.round(width)
+    sourceSize.height: Math.round(height)
     fillMode: Image.PreserveAspectFit
 
     source: {

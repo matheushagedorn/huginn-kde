@@ -8,7 +8,7 @@ import "../../theme"
 GlassPanel {
     id: root
     implicitWidth: mainLayout.implicitWidth + 24
-    implicitHeight: 36
+    implicitHeight: Theme.barHeight - 4
 
     RowLayout {
         id: mainLayout
@@ -21,7 +21,7 @@ GlassPanel {
         Rectangle {
             id: sessionBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: sessionMouse.containsMouse ? Theme.currentLine : "transparent"
 
@@ -96,8 +96,8 @@ GlassPanel {
                             anchors.centerIn: parent
                             text: modelData
                             color: wsItem.isActive ? Theme.accent : (wsItemMouse.containsMouse ? Theme.fg : Theme.comment)
-                            font.pixelSize: 11
-                            font.family: "Inter, Sans-Serif"
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
                             font.weight: wsItem.isActive ? Font.Bold : Font.Medium
                             verticalAlignment: Text.AlignVCenter
                             horizontalAlignment: Text.AlignHCenter
@@ -163,7 +163,7 @@ GlassPanel {
         id: sessionMenu
         anchor.window: window
         anchor.rect.x: 8
-        anchor.rect.y: 42
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Left
         visible: false
         color: "transparent"
@@ -246,7 +246,8 @@ GlassPanel {
                         Text {
                             text: "Lock"
                             color: Theme.fg
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
                             font.weight: Font.Medium
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -257,6 +258,46 @@ GlassPanel {
                         anchors.fill: parent
                         hoverEnabled: true
                         onClicked: { SessionService.lock(); PopupService.closeAll() }
+                    }
+                }
+
+                // Log Out Option
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: logoutRow.implicitWidth + 24
+                    Layout.preferredHeight: 28
+                    color: logoutMouse.containsMouse ? Theme.currentLine : "transparent"
+                    radius: 5
+
+                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                    RowLayout {
+                        id: logoutRow
+                        anchors.fill: parent
+                        anchors.leftMargin: 8
+                        anchors.rightMargin: 12
+                        spacing: 8
+
+                        Rectangle {
+                            width: 6; height: 6; radius: 3
+                            color: Theme.cyan
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                        Text {
+                            text: "Log out"
+                            color: Theme.fg
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
+                            font.weight: Font.Medium
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: logoutMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: { SessionService.logout(); PopupService.closeAll() }
                     }
                 }
 
@@ -285,7 +326,8 @@ GlassPanel {
                         Text {
                             text: "Reboot"
                             color: Theme.fg
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
                             font.weight: Font.Medium
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -322,9 +364,10 @@ GlassPanel {
                             Layout.alignment: Qt.AlignVCenter
                         }
                         Text {
-                            text: "Power Off"
+                            text: "Power off"
                             color: Theme.red
-                            font.pixelSize: 11
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
                             font.weight: Font.Medium
                             Layout.alignment: Qt.AlignVCenter
                         }
@@ -356,7 +399,7 @@ GlassPanel {
         id: wsPreviewPopup
         anchor.window: window
         anchor.rect.x: Math.max(10, root.hoverWsIndex * 32 + 10)
-        anchor.rect.y: 42
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: root.isWsHovered && root.hoverWsIndex >= 1
         color: "transparent"
@@ -390,14 +433,16 @@ GlassPanel {
                 Text {
                     text: "Workspace " + root.hoverWsIndex
                     color: Theme.fg
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fsBody
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
                 Text {
                     text: root.hoverWsIndex === WorkspaceService.activeWorkspace ? "Active" : "Switch"
                     color: root.hoverWsIndex === WorkspaceService.activeWorkspace ? Theme.accent : Theme.comment
-                    font.pixelSize: 9
+                    font.pixelSize: Theme.fsCaption
+                    font.family: Theme.fontFamily
                 }
             }
         }

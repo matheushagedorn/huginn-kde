@@ -59,22 +59,25 @@ PanelWindow {
                         Text {
                             text: "CPU"
                             color: Theme.accent
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fsSubhead
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                         Item { Layout.fillWidth: true }
                         Text {
                             text: SystemMonitorService.cpuPct + "%"
                             color: Theme.accent
-                            font.pixelSize: 16
+                            font.pixelSize: Theme.fsHead
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                     }
 
                     Text {
                         text: SystemMonitorService.cpuName
-                        color: Theme.comment
-                        font.pixelSize: 10
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -100,14 +103,14 @@ PanelWindow {
                         Layout.fillWidth: true
                         RowLayout {
                             spacing: 4
-                            Text { text: "Temp:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.cpuTemp + "°C"; color: SystemMonitorService.cpuTemp > 80 ? Theme.red : Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Temp:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.cpuTemp + "°C"; color: SystemMonitorService.cpuTemp > 80 ? Theme.red : Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                         Item { Layout.fillWidth: true }
                         RowLayout {
                             spacing: 4
-                            Text { text: "Fan:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: (SystemMonitorService.cpuFan > 0 ? SystemMonitorService.cpuFan + " RPM" : "Auto"); color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Fan:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: (SystemMonitorService.cpuFan > 0 ? SystemMonitorService.cpuFan + " RPM" : "Auto"); color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                     }
 
@@ -115,11 +118,11 @@ PanelWindow {
                         Layout.fillWidth: true
                         RowLayout {
                             spacing: 4
-                            Text { text: "Clock:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.cpuFreq; color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Clock:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.cpuFreq; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                         Item { Layout.fillWidth: true }
-                        Text { text: SystemMonitorService.cpuCores + " Cores"; color: Theme.comment; font.pixelSize: 12 }
+                        Text { text: SystemMonitorService.cpuCores + " Cores"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
                     }
 
                     Item { Layout.fillHeight: true }
@@ -153,22 +156,25 @@ PanelWindow {
                         Text {
                             text: "GPU"
                             color: Theme.accent
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fsSubhead
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                         Item { Layout.fillWidth: true }
                         Text {
                             text: SystemMonitorService.gpuPct + "%"
                             color: Theme.accent
-                            font.pixelSize: 16
+                            font.pixelSize: Theme.fsHead
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                     }
 
                     Text {
                         text: SystemMonitorService.gpuName
-                        color: Theme.comment
-                        font.pixelSize: 10
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
@@ -194,21 +200,21 @@ PanelWindow {
                         Layout.fillWidth: true
                         RowLayout {
                             spacing: 4
-                            Text { text: "Temp:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.gpuTemp + "°C"; color: SystemMonitorService.gpuTemp > 75 ? Theme.orange : Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Temp:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.gpuTemp + "°C"; color: SystemMonitorService.gpuTemp > 75 ? Theme.orange : Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                         Item { Layout.fillWidth: true }
                         RowLayout {
                             spacing: 4
-                            Text { text: "Pwr:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.gpuPower; color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Pwr:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.gpuPower; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                     }
 
                     RowLayout {
                         spacing: 4
-                        Text { text: "VRAM:"; color: Theme.comment; font.pixelSize: 12 }
-                        Text { text: SystemMonitorService.gpuVramUsed + " / " + SystemMonitorService.gpuVramTotal + " MB"; color: Theme.fg; font.pixelSize: 12 }
+                        Text { text: "VRAM:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                        Text { text: SystemMonitorService.gpuVramUsed + " / " + SystemMonitorService.gpuVramTotal + " MB"; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                     }
 
                     Item { Layout.fillHeight: true }
@@ -246,16 +252,18 @@ PanelWindow {
                     RowLayout {
                         Layout.fillWidth: true
                         Text {
-                            text: "MEMORY"
+                            text: "Memory"
                             color: Theme.accent
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fsSubhead
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                         Item { Layout.fillWidth: true }
                         Text {
                             text: SystemMonitorService.ramPct + "%"
                             color: Theme.accent
-                            font.pixelSize: 16
+                            font.pixelSize: Theme.fsHead
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                     }
@@ -281,14 +289,14 @@ PanelWindow {
                         Layout.fillWidth: true
                         RowLayout {
                             spacing: 4
-                            Text { text: "Used:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.ramUsed + " / " + SystemMonitorService.ramTotal + " GB"; color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Used:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.ramUsed + " / " + SystemMonitorService.ramTotal + " GB"; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                         Item { Layout.fillWidth: true }
                         RowLayout {
                             spacing: 4
-                            Text { text: "Swap:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.swapUsed + " / " + SystemMonitorService.swapTotal + " GB"; color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Swap:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.swapUsed + " / " + SystemMonitorService.swapTotal + " GB"; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                     }
 
@@ -336,9 +344,10 @@ PanelWindow {
                     spacing: 6
 
                     Text {
-                        text: "SYSTEM & NETWORK"
+                        text: "System and network"
                         color: Theme.accent
-                        font.pixelSize: 13
+                        font.pixelSize: Theme.fsSubhead
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -348,8 +357,8 @@ PanelWindow {
 
                         RowLayout {
                             spacing: 4
-                            Text { text: "NVMe:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.nvmeTemp + "°C"; color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "NVMe:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.nvmeTemp + "°C"; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
 
                         Item { Layout.fillWidth: true }
@@ -358,15 +367,17 @@ PanelWindow {
                             spacing: 4
                             Text {
                                 text: SystemMonitorService.hasWifi ? "Wi-Fi:" : "Ethernet:"
-                                color: Theme.comment
-                                font.pixelSize: 12
+                                color: Theme.textMuted
+                                font.pixelSize: Theme.fsStrong
+                                font.family: Theme.fontFamily
                             }
                             Text {
                                 text: SystemMonitorService.hasWifi
                                     ? SystemMonitorService.wifiSignal
                                     : (NetworkService.ethernetConnected ? "Connected" : "Disconnected")
                                 color: Theme.fg
-                                font.pixelSize: 12
+                                font.pixelSize: Theme.fsStrong
+                                font.family: Theme.fontFamily
                             }
                         }
                     }
@@ -377,16 +388,16 @@ PanelWindow {
 
                         RowLayout {
                             spacing: 4
-                            Text { text: "Net Dn:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.netRx; color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Net Dn:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.netRx; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
 
                         Item { Layout.fillWidth: true }
 
                         RowLayout {
                             spacing: 4
-                            Text { text: "Net Up:"; color: Theme.comment; font.pixelSize: 12 }
-                            Text { text: SystemMonitorService.netTx; color: Theme.fg; font.pixelSize: 12 }
+                            Text { text: "Net Up:"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong }
+                            Text { text: SystemMonitorService.netTx; color: Theme.fg; font.pixelSize: Theme.fsStrong }
                         }
                     }
 
@@ -406,9 +417,9 @@ PanelWindow {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Text { text: "Storage"; color: Theme.comment; font.pixelSize: 11 }
+                            Text { text: "Storage"; color: Theme.textMuted; font.pixelSize: Theme.fsBody }
                             Item { Layout.fillWidth: true }
-                            Text { text: SystemMonitorService.diskUsed + " / " + SystemMonitorService.diskTotal + " GB (" + SystemMonitorService.diskPct + "%)"; color: Theme.fg; font.pixelSize: 11 }
+                            Text { text: SystemMonitorService.diskUsed + " / " + SystemMonitorService.diskTotal + " GB (" + SystemMonitorService.diskPct + "%)"; color: Theme.fg; font.pixelSize: Theme.fsBody }
                         }
 
                         Rectangle {

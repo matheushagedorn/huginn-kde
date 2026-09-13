@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
+import getpass
 import subprocess
 import shutil
 import re
@@ -13,7 +14,10 @@ def clean_field_codes(cmd):
     return re.sub(r'%[a-zA-Z]', '', cmd).strip()
 
 def get_nixos_env_path():
-    user_name = os.environ.get('USER', 'sho')
+    # Falls back to the real account name instead of a hardcoded one: the
+    # upstream default was the original author's username, which silently
+    # built paths for a user that does not exist here.
+    user_name = os.environ.get('USER') or getpass.getuser()
     env_path = os.environ.get("PATH", "")
     extra = [
         f"/etc/profiles/per-user/{user_name}/bin",
@@ -33,7 +37,10 @@ def get_nixos_env_path():
     return ":".join(path_dirs)
 
 def get_desktop_dirs():
-    user_name = os.environ.get('USER', 'sho')
+    # Falls back to the real account name instead of a hardcoded one: the
+    # upstream default was the original author's username, which silently
+    # built paths for a user that does not exist here.
+    user_name = os.environ.get('USER') or getpass.getuser()
     dirs = [
         os.path.expanduser('~/.local/share/applications'),
         os.path.expanduser('~/.nix-profile/share/applications'),

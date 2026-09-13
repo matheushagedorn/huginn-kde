@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import getpass
 import json
 import configparser
 import sys
@@ -33,7 +34,10 @@ def get_system_theme():
 def parse_desktop_apps():
     sys_theme = get_system_theme()
     themes_to_search = [sys_theme]
-    user_name = os.environ.get('USER', 'sho')
+    # Falls back to the real account name instead of a hardcoded one: the
+    # upstream default was the original author's username, which silently
+    # built paths for a user that does not exist here.
+    user_name = os.environ.get('USER') or getpass.getuser()
 
     bases = [
         os.path.expanduser('~/.local/share/icons'),

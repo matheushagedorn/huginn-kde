@@ -11,6 +11,7 @@ import "modules/desktop"
 import "modules/lockscreen"
 import "modules/osd"
 import "services"
+import "theme"
 
 Scope {
     IpcHandler {
@@ -22,6 +23,19 @@ Scope {
                 Quickshell.reloadConfig()
             }
         }
+    }
+
+    // Lets the panels be opened from a script, which is how they get
+    // screenshotted and checked across theme variants.
+    IpcHandler {
+        target: "popup"
+        function media() { PopupService.toggleMedia() }
+        function brightness() { PopupService.toggleBrightness() }
+        function calendar() { PopupService.toggleCalendar() }
+        function weather() { PopupService.toggleWeather() }
+        function session() { PopupService.toggleSession() }
+        function notifications() { PopupService.toggleNotification() }
+        function close() { PopupService.closeAll() }
     }
 
     IpcHandler {
@@ -52,7 +66,10 @@ Scope {
     WallpaperWindow {}
 
     // Floating Volume & Brightness On-Screen Display
-    VolumeBrightnessOSD {}
+    //
+    // Pinned like every other window here: a PanelWindow without `screen:`
+    // picks an output on its own, and not always the same one.
+    VolumeBrightnessOSD { screen: primaryScreen }
 
     // Desktop Plasmoid System Monitor (Layer: Bottom, Non-restricting)
     SystemWidget {}
@@ -97,7 +114,7 @@ Scope {
         // Reserves real screen space: since the bar is always visible, a
         // maximized window should start below it, not hidden underneath.
         WlrLayershell.layer: WlrLayershell.Top
-        implicitHeight: 40
+        implicitHeight: Theme.barHeight
         color: "transparent"
 
         TopLeftBar {
@@ -269,7 +286,7 @@ Scope {
     AppLauncher {}
 
     // Bottom-Right Notification Toast Overlay
-    NotificationToast {}
+    NotificationToast { screen: primaryScreen }
 
     // The theme's lockscreen overlay is disabled on purpose: Wayland's
     // session lock stops any ordinary app from drawing over the real lock

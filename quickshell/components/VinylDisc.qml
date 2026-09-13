@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell.Widgets
+import "../theme"
 
 Item {
     id: root
@@ -11,16 +13,15 @@ Item {
     property real size: Math.min(width, height)
 
     // Outer Stationary Circular Mask Container (Enforces 1:1 Aspect Ratio)
-    Rectangle {
+    ClippingRectangle {
         id: discMask
         width: root.size
         height: root.size
         anchors.centerIn: parent
         radius: root.size / 2
-        color: "#181920"
-        border.color: "#44475a"
+        color: Theme.bg
+        border.color: Theme.separator
         border.width: 1
-        clip: true
 
         // Inner Rotating Disc Item
         Item {
@@ -44,12 +45,14 @@ Item {
                 visible: status === Image.Ready && root.artUrl !== ""
             }
 
-            // Dracula Gradient Fallback for Web/Browser Sources without artUrl
+            // Palette gradient while there is no artwork. This was three
+            // frozen Dracula hex values, so the disc stayed purple/pink on
+            // every one of the other 29 variants.
             Rectangle {
                 anchors.fill: parent
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#bd93f9" }
-                    GradientStop { position: 1.0; color: "#ff79c6" }
+                    GradientStop { position: 0.0; color: Theme.accent }
+                    GradientStop { position: 1.0; color: Theme.subAccent }
                 }
                 visible: !albumImg.visible
             }
@@ -60,8 +63,8 @@ Item {
                 width: parent.width * 0.18
                 height: parent.height * 0.18
                 radius: width / 2
-                color: "#282a36"
-                border.color: "#44475a"
+                color: Theme.bg
+                border.color: Theme.separator
                 border.width: 1
             }
         }

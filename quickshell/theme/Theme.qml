@@ -104,6 +104,135 @@ Item {
     property int blurRadius: 0
     property int cornerRadius: 10
 
+    // ---------------------------------------------------------------------
+    // Design tokens
+    //
+    // Every literal size, radius and gap used to live inline in the modules,
+    // which is how the same role ended up with four different values. These
+    // are the single source now; a module that needs a size reads it here.
+    // ---------------------------------------------------------------------
+
+    // Type scale. 12px is the legibility floor: nothing renders below it.
+    // The steps are roughly a 1.15 ratio, so the roles stay distinguishable
+    // without any one of them shouting.
+    readonly property int fsCaption: 12   // badges, day labels, timestamps
+    readonly property int fsBody:    13   // interface text, list rows
+    readonly property int fsStrong:  14   // card titles, primary readouts
+    readonly property int fsSubhead: 16   // section heads inside popups
+    readonly property int fsHead:    18   // popup titles, large glyphs
+    readonly property int fsTitle:   22
+    readonly property int fsDisplay: 26
+
+    // Line height and tracking for the two sizes that carry real reading:
+    // small type needs looser leading, and bold small caps need tracking.
+    readonly property real lhTight:  1.15
+    readonly property real lhBody:   1.35
+    readonly property real trackCaps: 0.6
+
+    // Fonts. "Inter" is not installed on this machine and silently resolved
+    // to Noto Sans, so the family string was a lie; the stack now names what
+    // is actually here first and keeps Inter for machines that do have it.
+    readonly property string fontFamily: "Inter, Noto Sans, DejaVu Sans, Sans-Serif"
+    readonly property string fontMono: "MesloLGS Nerd Font Mono, Noto Sans Mono, monospace"
+    // Icon glyphs (U+F0000 block). JetBrainsMono/Symbols/CaskaydiaCove are
+    // NOT installed here and fell through to Noto Sans, which renders tofu.
+    // MesloLGS Nerd Font is installed and covers the block.
+    readonly property string fontIcon: "MesloLGS Nerd Font, JetBrainsMono Nerd Font, Symbols Nerd Font, Sans-Serif"
+
+    // Spacing scale (4pt grid).
+    readonly property int sp1: 4
+    readonly property int sp2: 8
+    readonly property int sp3: 12
+    readonly property int sp4: 16
+    readonly property int sp5: 24
+
+    // Radius scale. cornerRadius stays the panel/card value.
+    readonly property int radiusChip: 6    // small capsules and buttons
+    readonly property int radiusPill: 8    // badges, pills
+    readonly property int radiusCard: cornerRadius
+
+    // Bar geometry. The popup gap was hardcoded as 40 in thirteen places and
+    // 42 in five, so center popups hung 2px lower than right popups.
+    // 44 rather than the previous 40: a 13px body line needs a 28px capsule
+    // to keep real padding, and the capsule needs the panel around it.
+    readonly property int barHeight: 44
+    readonly property int barCapsule: 28
+    readonly property int popupGap: barHeight + sp1
+
+    // ---------------------------------------------------------------------
+    // Contrast-corrected roles (WCAG AA, 4.5:1 for body-sized text)
+    //
+    // Measured across all 30 variants, `comment` fell below 4.5:1 against the
+    // background on 26 of them (worst: Everforest Dark at 2.79:1, Nord Dark
+    // at 2.80:1) and it is used for real secondary text — artist names,
+    // timestamps, device labels. These roles lift the palette colour just far
+    // enough to clear AA and leave it untouched when it already does.
+    // ---------------------------------------------------------------------
+
+    function relLuminance(c) {
+        function ch(v) { return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
+        return 0.2126 * ch(c.r) + 0.7152 * ch(c.g) + 0.0722 * ch(c.b)
+    }
+
+    function contrastRatio(a, b) {
+        var la = relLuminance(a), lb = relLuminance(b)
+        return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
+    }
+
+    // Walks `c` toward white (on a dark ground) or black (on a light one) in
+    // 4% steps until it clears `target` against BOTH grounds it may sit on.
+    // Flattens a translucent colour against its ground, so contrast is
+    // measured on what the eye actually sees. Several palettes define their
+    // muted text as an alpha over the background.
+    function flatten(c, ground) {
+        if (c.a >= 0.999) return c
+        return Qt.rgba(c.r * c.a + ground.r * (1 - c.a),
+                       c.g * c.a + ground.g * (1 - c.a),
+                       c.b * c.a + ground.b * (1 - c.a), 1)
+    }
+
+    function ensureContrast(rawC, ground, alt, target) {
+        var c = flatten(rawC, ground)
+        var dest = relLuminance(ground) < 0.5 ? Qt.rgba(1, 1, 1, 1) : Qt.rgba(0, 0, 0, 1)
+        var out = c
+        for (var i = 0; i <= 25; i++) {
+            if (contrastRatio(out, ground) >= target && contrastRatio(out, alt) >= target) return out
+            var t = i * 0.04
+            out = Qt.rgba(c.r + (dest.r - c.r) * t,
+                          c.g + (dest.g - c.g) * t,
+                          c.b + (dest.b - c.b) * t, 1)
+        }
+        return out
+    }
+
+    // Secondary text. Readable on the panel ground and on raised surfaces.
+    readonly property color textMuted: ensureContrast(comment, bg, surface, 4.5)
+    // Accent used as text rather than as a fill.
+    readonly property color accentText: ensureContrast(accent, bg, surface, 4.5)
+    readonly property color subAccentText: ensureContrast(subAccent, bg, surface, 4.5)
+    // Semantic states, contrast-corrected. These replace the hand-written
+    // `Theme.isDark ? Theme.green : "#15803d"` ternaries scattered around.
+    readonly property color success: ensureContrast(green, bg, surface, 4.5)
+    readonly property color warning: ensureContrast(yellow, bg, surface, 4.5)
+    readonly property color danger: ensureContrast(red, bg, surface, 4.5)
+    // Glyphs and text sitting on top of an accent fill. Picks whichever of
+    // white or near-black actually contrasts more against that accent, rather
+    // than switching on a fixed luminance threshold: a mid-tone accent such as
+    // Rosé Pine Dawn's #d7827e clears 8:1 against dark and only 2.6:1 against
+    // white, and a threshold would have handed it white.
+    readonly property color accentFg: {
+        var light = Qt.rgba(1, 1, 1, 1)
+        var dark = isDark ? bg : Qt.rgba(0.08, 0.08, 0.1, 1)
+        return contrastRatio(light, accent) >= contrastRatio(dark, accent) ? light : dark
+    }
+
+    // Interaction states, so hover/active/disabled are chromatically the same
+    // family everywhere instead of each call site inventing an alpha.
+    readonly property color stateHover: Qt.rgba(fg.r, fg.g, fg.b, isDark ? 0.10 : 0.08)
+    readonly property color stateActive: Qt.rgba(accent.r, accent.g, accent.b, 0.22)
+    readonly property color stateFocus: Qt.rgba(accent.r, accent.g, accent.b, 0.55)
+    readonly property real disabledOpacity: 0.45
+
     function setVariant(name, isStartupRestoration) {
         for (let i = 0; i < variants.length; i++) {
             let v = variants[i]
@@ -172,7 +301,7 @@ Item {
                 AppLauncherService.reload()
 
                 // Persist selected theme variant to disk
-                Quickshell.execDetached(["sh", "-c", "echo '" + v.name + "' > ~/.config/quickshell_current_theme.txt"])
+                Quickshell.execDetached(["sh", "-c", "echo '" + v.name + "' > ~/.config/huginn_current_theme.txt"])
                 break
             }
         }
@@ -181,7 +310,7 @@ Item {
     // Read saved theme variant on startup
     Process {
         id: readThemeProc
-        command: ["bash", "-c", "cat ~/.config/quickshell_current_theme.txt 2>/dev/null || echo 'Pro'"]
+        command: ["bash", "-c", "cat ~/.config/huginn_current_theme.txt 2>/dev/null || echo 'Pro'"]
         running: true
         stdout: SplitParser {
             onRead: data => {

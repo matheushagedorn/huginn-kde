@@ -69,7 +69,7 @@ Item {
 
     GlassPanel {
         anchors.fill: parent
-        radius: 16
+        radius: Theme.radiusCard
 
         ColumnLayout {
             anchors.fill: parent
@@ -83,8 +83,8 @@ Item {
                 Text {
                     text: "Wallpapers"
                     color: Theme.fg
-                    font.pixelSize: 15
-                    font.family: "Inter, Sans-Serif"
+                    font.pixelSize: Theme.fsHead
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
@@ -92,9 +92,9 @@ Item {
 
                 Text {
                     text: root.filteredWallpapers.length + " wallpapers"
-                    color: Theme.comment
-                    font.pixelSize: 11
-                    font.family: "Inter, Sans-Serif"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fsBody
+                    font.family: Theme.fontFamily
                     font.weight: Font.Normal
                 }
             }
@@ -169,9 +169,11 @@ Item {
                                             anchors.leftMargin: 6
                                             anchors.rightMargin: 6
                                             text: modelData.name
+                                            // Sits on top of the wallpaper thumbnail, not on a
+                                            // palette surface, so it stays white on every theme.
                                             color: "#ffffff"
-                                            font.pixelSize: 10
-                                            font.family: "Inter, Sans-Serif"
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                             font.weight: Font.Normal
                                             elide: Text.ElideRight
                                         }

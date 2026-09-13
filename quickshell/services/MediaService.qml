@@ -51,6 +51,12 @@ Item {
     property string positionStr: formatTime(position)
     property string lengthStr: length > 0 ? formatTime(length) : "--:--"
 
+    // A player is attached but has not published a duration yet — typical for
+    // a browser tab that is still buffering the stream. The progress bar shows
+    // an indeterminate state instead of a track it cannot measure.
+    readonly property bool durationKnown: length > 0
+    readonly property bool buffering: hasPlayer && !durationKnown
+
     function formatTime(secs) {
         if (isNaN(secs) || secs <= 0) return "0:00"
         var m = Math.floor(secs / 60)
@@ -89,12 +95,18 @@ Item {
 
     function next() {
         root.position = 0
+        // Drop the old duration too, otherwise the bar shows the previous
+        // track's length until the new metadata lands.
+        root.length = 0
         var pName = root.playerName !== "" ? root.playerName : "%any"
         Quickshell.execDetached(["bash", "-c", "playerctl -p '" + pName + "' next 2>/dev/null || true"])
     }
 
     function previous() {
         root.position = 0
+        // Drop the old duration too, otherwise the bar shows the previous
+        // track's length until the new metadata lands.
+        root.length = 0
         var pName = root.playerName !== "" ? root.playerName : "%any"
         Quickshell.execDetached(["bash", "-c", "playerctl -p '" + pName + "' previous 2>/dev/null || true"])
     }
@@ -106,13 +118,14 @@ Item {
             root.isSeeking = true
             seekTimer.restart()
 
-            var targetMicro = Math.floor(validSec * 1000000)
+            // Seek on the player we are actually showing. The old command
+            // picked the first org.mpris.MediaPlayer2 name on the bus, so with
+            // two players open the scrub landed on the wrong timeline and the
+            // thumb snapped back.
+            var pName = root.playerName !== "" ? root.playerName : "%any"
             Quickshell.execDetached([
                 "bash", "-c",
-                "PLAYER_SERVICE=$(busctl --user list | grep -m1 'org.mpris.MediaPlayer2' | awk '{print $1}'); " +
-                "TRACK_ID=$(playerctl metadata --format '{{mpris:trackid}}' | tr -d \"'\"); " +
-                "[ -z \"$TRACK_ID\" ] && TRACK_ID=\"/org/mpris/MediaPlayer2/TrackList/NoTrack\"; " +
-                "busctl --user call \"$PLAYER_SERVICE\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player SetPosition ox \"$TRACK_ID\" " + targetMicro
+                "playerctl -p '" + pName + "' position " + validSec.toFixed(3) + " 2>/dev/null || true"
             ])
         }
     }
@@ -219,7 +232,10 @@ Item {
 
     Process {
         id: posProc
-        command: ["playerctl", "position"]
+        // Same player as the metadata stream. Without -p this read the first
+        // player on the bus, so a paused second player kept dragging the
+        // progress bar back to its own position every 500ms.
+        command: ["playerctl", "-p", root.playerName !== "" ? root.playerName : "%any", "position"]
         running: false
         stdout: SplitParser {
             onRead: data => {

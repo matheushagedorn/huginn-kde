@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import os
+import getpass
 import subprocess
 import time
 
@@ -37,7 +38,10 @@ def run_spectacle():
         time.sleep(0.25)
 
     # 3. Environment setup for NixOS
-    user_name = os.environ.get('USER', 'sho')
+    # Falls back to the real account name instead of a hardcoded one: the
+    # upstream default was the original author's username, which silently
+    # built paths for a user that does not exist here.
+    user_name = os.environ.get('USER') or getpass.getuser()
     env_path = os.environ.get("PATH", "")
     extra = [
         f"/etc/profiles/per-user/{user_name}/bin",

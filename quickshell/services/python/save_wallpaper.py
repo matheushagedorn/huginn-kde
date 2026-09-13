@@ -9,7 +9,7 @@ def save_wallpaper():
     wp_path = sys.argv[1].strip()
     variant = sys.argv[2].strip() if len(sys.argv) > 2 else ""
 
-    user_file = os.path.expanduser('~/.config/quickshell_user_wallpaper.json')
+    user_file = os.path.expanduser('~/.config/huginn_user_wallpaper.json')
     data = {"theme_wallpapers": {}, "active_variant": ""}
 
     if os.path.exists(user_file):

@@ -1,10 +1,11 @@
 import QtQuick
+import "../theme"
 
 Item {
     id: root
     implicitWidth: 13
     implicitHeight: 13
-    property color color: "#bd93f9"
+    property color color: Theme.fg
     property real strokeWidth: 1.6
 
     Canvas {

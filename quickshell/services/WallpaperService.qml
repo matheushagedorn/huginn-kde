@@ -13,12 +13,9 @@ Item {
     property bool isLoaded: false
     readonly property string currentWallpaper: Theme.wallpaperPath
 
-    // Automatic recolor watcher background daemon
-    Process {
-        id: recolorProc
-        command: ["python3", Quickshell.env("HOME") + "/.config/quickshell/services/python/recolor_watcher.py"]
-        running: true
-    }
+    // The recolor watcher is not started here. It runs as its own systemd
+    // unit (huginn-recolor-watcher.service), and starting it from both places
+    // meant a second copy on every shell restart.
 
     // Read saved user wallpaper state on startup
     Process {

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import signal
+import getpass
 import time
 import sys
 import glob
@@ -66,7 +68,10 @@ PALETTES = {
 }
 
 def find_lutgen():
-    user = os.getenv('USER', 'sho')
+    # Falls back to the real account name instead of a hardcoded one: the
+    # upstream default was the original author's username, which silently
+    # built paths for a user that does not exist here.
+    user = os.environ.get('USER') or getpass.getuser()
     for p in [
         f'/etc/profiles/per-user/{user}/bin/lutgen',
         f'/etc/profiles/per-user/{user}/bin/lutgen-cli',
@@ -192,5 +197,32 @@ def watch_folder():
             
         time.sleep(2)
 
+
+def _ensure_single_instance():
+    """Replaces any older copy of this script before starting.
+
+    These watchers are long-lived and were being started from more than one
+    place, so every shell restart left the previous pair running. Seventeen
+    recolor watchers all invoking papirus-folders is how the account got
+    locked by faillock once already.
+    """
+    import glob
+    me = os.path.realpath(__file__)
+    mypid = os.getpid()
+    for entry in glob.glob('/proc/[0-9]*/cmdline'):
+        try:
+            pid = int(entry.split('/')[2])
+            if pid == mypid:
+                continue
+            argv = open(entry, 'rb').read().split(b'\0')
+            if not any(os.path.realpath(a.decode('utf-8', 'replace')) == me
+                       for a in argv if a):
+                continue
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            continue
+
+
 if __name__ == '__main__':
+    _ensure_single_instance()
     watch_folder()

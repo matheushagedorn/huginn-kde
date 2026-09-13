@@ -80,7 +80,7 @@ Item {
             Rectangle {
                 width: 24; height: 24; radius: 4
                 color: prevMonthMouse.containsMouse ? Theme.currentLine : "transparent"
-                Text { text: "‹"; color: Theme.fg; font.pixelSize: 14; anchors.centerIn: parent }
+                Text { text: "‹"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; anchors.centerIn: parent }
                 MouseArea {
                     id: prevMonthMouse
                     anchors.fill: parent
@@ -92,7 +92,8 @@ Item {
             Text {
                 text: root.getMonthName(root.selectedMonth) + " " + root.selectedYear
                 color: Theme.fg
-                font.pixelSize: 12
+                font.pixelSize: Theme.fsStrong
+                font.family: Theme.fontFamily
                 font.weight: Font.Bold
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
@@ -101,7 +102,7 @@ Item {
             Rectangle {
                 width: 24; height: 24; radius: 4
                 color: nextMonthMouse.containsMouse ? Theme.currentLine : "transparent"
-                Text { text: "›"; color: Theme.fg; font.pixelSize: 14; anchors.centerIn: parent }
+                Text { text: "›"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; anchors.centerIn: parent }
                 MouseArea {
                     id: nextMonthMouse
                     anchors.fill: parent
@@ -121,7 +122,8 @@ Item {
                 Text {
                     text: modelData
                     color: Theme.accent
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fsCaption
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                     Layout.preferredWidth: 26
                     horizontalAlignment: Text.AlignHCenter
@@ -148,8 +150,9 @@ Item {
                     Text {
                         anchors.centerIn: parent
                         text: modelData.day.toString()
-                        color: modelData.isToday ? (Theme.isDark ? Theme.bg : "#ffffff") : (modelData.isCurrentMonth ? Theme.fg : Qt.rgba(98/255, 114/255, 164/255, 0.4))
-                        font.pixelSize: 10
+                        color: modelData.isToday ? Theme.accentFg : (modelData.isCurrentMonth ? Theme.fg : Qt.rgba(Theme.comment.r, Theme.comment.g, Theme.comment.b, 0.5))
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: modelData.isToday ? Font.Bold : Font.Normal
                     }
                 }

@@ -8,7 +8,7 @@ import "../../theme"
 GlassPanel {
     id: root
     implicitWidth: mainLayout.implicitWidth + 24
-    implicitHeight: 36
+    implicitHeight: Theme.barHeight - 4
 
     RowLayout {
         id: mainLayout
@@ -21,7 +21,7 @@ GlassPanel {
         Rectangle {
             id: weatherBtn
             Layout.preferredWidth: weatherRow.implicitWidth + 14
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 7
             color: weatherMouse.containsMouse ? Theme.currentLine : "transparent"
             border.color: weatherMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : "transparent"
@@ -37,13 +37,13 @@ GlassPanel {
 
                 Text {
                     text: WeatherService.getWeatherIcon(WeatherService.weatherCode)
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fsStrong
                 }
 
                 Text {
                     text: WeatherService.currentTempStr
                     color: Theme.fg
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fsBody
                     font.weight: Font.Medium
                 }
             }
@@ -67,7 +67,7 @@ GlassPanel {
         Rectangle {
             id: timeBtn
             Layout.preferredWidth: timeRow.implicitWidth + 18
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 8
             color: timeMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.20) : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10)
             border.color: timeMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.65) : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24)
@@ -84,28 +84,31 @@ GlassPanel {
                 // Bell / DND Icon (Left side of Time & Date)
                 BellIcon {
                     isDnd: NotificationService.isDnd
-                    implicitWidth: 14
-                    implicitHeight: 14
+                    hasUnread: NotificationService.notifications.length > 0
+                    implicitWidth: 15
+                    implicitHeight: 15
                     Layout.alignment: Qt.AlignVCenter
                 }
 
                 Text {
                     text: DateTimeService.timeStr
                     color: Theme.fg
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fsBody
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
                 Text {
                     text: "•"
                     color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.6)
-                    font.pixelSize: 10
+                    font.pixelSize: Theme.fsCaption
+                    font.family: Theme.fontFamily
                 }
 
                 Text {
                     text: DateTimeService.dateStr
-                    color: Theme.comment
-                    font.pixelSize: 11
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fsBody
                     font.weight: Font.Medium
                 }
             }
@@ -129,7 +132,7 @@ GlassPanel {
         Rectangle {
             id: mediaBtn
             Layout.preferredWidth: mediaRow.implicitWidth + 14
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 7
             color: mediaMouse.containsMouse ? Theme.currentLine : "transparent"
             border.color: mediaMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : "transparent"
@@ -167,7 +170,8 @@ GlassPanel {
                         anchors.centerIn: parent
                         text: MediaService.playerDisplayName
                         color: Theme.accent
-                        font.pixelSize: 9
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
                 }
@@ -179,7 +183,8 @@ GlassPanel {
                     implicitHeight: 16
                     text: MediaService.hasPlayer && MediaService.title ? MediaService.title + (MediaService.artist ? " - " + MediaService.artist : "") : "No Media Playing"
                     color: MediaService.hasPlayer ? Theme.fg : Theme.comment
-                    font.pixelSize: 11
+                    font.pixelSize: Theme.fsBody
+                    font.family: Theme.fontFamily
                     font.weight: Font.Medium
                 }
             }
@@ -198,7 +203,7 @@ GlassPanel {
         id: timeMenu
         anchor.window: window
         anchor.rect.x: root.x + (root.width / 2) - (implicitWidth / 2)
-        anchor.rect.y: 42
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
@@ -262,7 +267,7 @@ GlassPanel {
         id: mediaMenu
         anchor.window: window
         anchor.rect.x: root.x + (root.width / 2) - (implicitWidth / 2)
-        anchor.rect.y: 42
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
@@ -306,47 +311,71 @@ GlassPanel {
 
         GlassPanel {
             id: playerGlass
-            implicitWidth: 240
-            implicitHeight: playerLayout.implicitHeight + 24
+            implicitWidth: 260
+
+            // The spectrum gets its own band at the foot of the card. It used
+            // to fill the whole card and grow up through the controls row, so
+            // the prev/next glyphs — drawn on a transparent button — had bars
+            // crossing them whenever something was playing.
+            readonly property int spectrumBand: spectrum.visible ? 26 : 0
+
+            implicitHeight: playerLayout.implicitHeight + Theme.sp5 + spectrumBand
             anchors.fill: parent
 
             opacity: mediaMenu.animProgress
             scale: 0.90 + 0.10 * mediaMenu.animProgress
             transformOrigin: Item.Top
 
-            // Full-Card Translucent Ambient Spectrum Visualizer Background (Centered & Full Panel Height)
+            // Output spectrum, in its own band along the bottom edge.
+            // Driven by cava; hidden entirely when cava is not installed so
+            // the card never shows a frozen meter that cannot respond.
             Item {
-                id: bgVisualizer
-                anchors.fill: parent
-                visible: MediaService.hasPlayer
+                id: spectrum
+                z: 0
+                visible: MediaService.hasPlayer && CavaService.available
+                anchors {
+                    left: parent.left
+                    right: parent.right
+                    bottom: parent.bottom
+                    leftMargin: Theme.sp3
+                    rightMargin: Theme.sp3
+                    bottomMargin: Theme.sp2
+                }
+                height: 22
                 clip: true
 
                 Row {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.bottom: parent.bottom
-                    height: parent.height
-                    spacing: Math.max(2, (parent.width - 24 - (28 * 4)) / 27)
+                    id: spectrumRow
+                    anchors.fill: parent
+                    spacing: Math.max(2, (width - CavaService.bars * 4) / (CavaService.bars - 1))
 
                     Repeater {
-                        model: 28
+                        model: CavaService.bars
 
                         Rectangle {
                             width: 4
-                            height: {
-                                let dummy = CavaService.tick;
-                                if (MediaService.status !== "Playing") return 6;
-                                let rawVal = (CavaService.values && CavaService.values.length > index) ? CavaService.values[index] : 0;
-                                let ratio = rawVal / 100.0;
-                                return Math.max(6, Math.min(bgVisualizer.height, ratio * bgVisualizer.height));
-                            }
-                            radius: 2
-                            color: MediaService.status === "Playing" 
-                                ? Qt.rgba(Theme.pink.r, Theme.pink.g, Theme.pink.b, 0.22) 
-                                : Qt.rgba(Theme.comment.r, Theme.comment.g, Theme.comment.b, 0.06)
-
                             anchors.bottom: parent.bottom
+                            radius: 2
 
-                            Behavior on height { NumberAnimation { duration: 40; easing.type: Easing.OutQuad } }
+                            // One binding on `tick` drives all 28 bars; the
+                            // per-bar 40ms NumberAnimation that used to smooth
+                            // them ran 28 concurrent animations at 60fps for a
+                            // signal cava has already smoothed.
+                            height: {
+                                let t = CavaService.tick
+                                if (MediaService.status !== "Playing") return 2
+                                let raw = (CavaService.values && CavaService.values.length > index)
+                                    ? CavaService.values[index] : 0
+                                // Gamma curve, not a straight ratio. Mapped
+                                // linearly, ordinary music peaked at a tenth
+                                // of the band and the meter barely moved.
+                                let ratio = Math.pow(raw / 100.0, 0.55)
+                                return Math.max(2, Math.min(spectrum.height, ratio * spectrum.height))
+                            }
+
+                            color: MediaService.status === "Playing"
+                                ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.55)
+                                : Qt.rgba(Theme.comment.r, Theme.comment.g, Theme.comment.b, 0.18)
                         }
                     }
                 }
@@ -354,19 +383,21 @@ GlassPanel {
 
             ColumnLayout {
                 id: playerLayout
+                z: 1
                 anchors.fill: parent
-                anchors.margins: 12
-                spacing: 10
+                anchors.margins: Theme.sp3
+                anchors.bottomMargin: Theme.sp3 + playerGlass.spectrumBand
+                spacing: Theme.sp2
 
-                // Source Header Badge
+                // Which app the audio is coming from, plus its transport state.
                 Rectangle {
                     visible: MediaService.hasPlayer && MediaService.playerDisplayName !== ""
                     Layout.alignment: Qt.AlignHCenter
-                    implicitWidth: popupSourceRow.implicitWidth + 12
-                    implicitHeight: 18
-                    radius: 5
-                    color: Theme.currentLine
-                    border.color: Theme.currentLine
+                    implicitWidth: popupSourceRow.implicitWidth + Theme.sp3
+                    implicitHeight: 22
+                    radius: Theme.radiusPill
+                    color: Theme.stateHover
+                    border.color: Theme.separator
                     border.width: 1
 
                     RowLayout {
@@ -375,20 +406,24 @@ GlassPanel {
                         spacing: 5
 
                         Rectangle {
-                            width: 5; height: 5; radius: 2.5
-                            color: MediaService.status === "Playing" ? Theme.green : Theme.yellow
+                            width: 6
+                            height: 6
+                            radius: 3
+                            color: MediaService.status === "Playing" ? Theme.success : Theme.warning
                         }
 
                         Text {
-                            text: MediaService.playerDisplayName.toUpperCase()
+                            // Shown as the app names itself ("Brave"), not
+                            // shouted in caps.
+                            text: MediaService.playerDisplayName
                             color: Theme.fg
-                            font.pixelSize: 9
-                            font.weight: Font.Bold
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fsCaption
+                            font.weight: Font.DemiBold
                         }
                     }
                 }
 
-                // Static Album Cover Disc (64x64)
                 AlbumCover {
                     Layout.preferredWidth: 64
                     Layout.preferredHeight: 64
@@ -398,31 +433,34 @@ GlassPanel {
                     Layout.alignment: Qt.AlignHCenter
                 }
 
-                // Track Title
                 Text {
-                    text: MediaService.hasPlayer && MediaService.title ? MediaService.title : "No Media Playing"
+                    text: MediaService.hasPlayer && MediaService.title ? MediaService.title : "Nothing playing"
                     color: Theme.fg
-                    font.pixelSize: 12
-                    font.weight: Font.Bold
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fsSubhead
+                    font.weight: Font.DemiBold
+                    lineHeight: Theme.lhTight
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                // Artist
                 Text {
-                    text: MediaService.artist !== "" ? MediaService.artist : "Unknown Artist"
-                    color: Theme.comment
-                    font.pixelSize: 11
+                    text: MediaService.artist !== "" ? MediaService.artist : "Unknown artist"
+                    color: Theme.textMuted
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fsBody
+                    lineHeight: Theme.lhBody
                     elide: Text.ElideRight
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                // Smooth Progress Bar Section with Circle Scrub Handle
+                // Position, scrubbing and buffer state.
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 4
+                    Layout.topMargin: Theme.sp1
+                    spacing: Theme.sp1
                     visible: MediaService.hasPlayer
 
                     Item {
@@ -430,23 +468,53 @@ GlassPanel {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 14
 
-                        property bool isDragging: seekMouse.pressed
+                        // Latched rather than read from seekMouse.pressed.
+                        // `pressed` flips to false before onReleased fires, so
+                        // the binding fell back to the stale playback position
+                        // for one frame and the thumb visibly bounced back
+                        // before jumping to where it was dropped.
+                        property bool isDragging: false
                         property real dragRatio: 0.0
+                        readonly property real shownRatio: isDragging ? dragRatio : MediaService.progress
 
-                        // Track Background
                         Rectangle {
+                            id: seekTrack
                             anchors.centerIn: parent
                             width: parent.width
                             height: 4
                             radius: 2
                             color: Theme.currentLine
 
-                            // Active Fill
+                            // Duration unknown yet — a stream still buffering.
+                            // An indeterminate sweep says "working on it"
+                            // instead of parking the thumb at 0:00.
                             Rectangle {
-                                width: Math.max(4, parent.width * (progressTrackContainer.isDragging ? progressTrackContainer.dragRatio : MediaService.progress))
+                                id: bufferSweep
+                                visible: MediaService.buffering
+                                width: parent.width * 0.3
                                 height: parent.height
                                 radius: 2
-                                color: Theme.pink
+                                color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35)
+
+                                SequentialAnimation on x {
+                                    running: bufferSweep.visible
+                                    loops: Animation.Infinite
+                                    NumberAnimation { from: 0; to: seekTrack.width - bufferSweep.width; duration: 900; easing.type: Easing.InOutQuad }
+                                    NumberAnimation { from: seekTrack.width - bufferSweep.width; to: 0; duration: 900; easing.type: Easing.InOutQuad }
+                                }
+                            }
+
+                            Rectangle {
+                                id: seekFill
+                                visible: !MediaService.buffering
+                                // Accent, not pink. On every palette where the
+                                // two differ — Tokyo Night's blue accent
+                                // against a salmon pink, for one — this was the
+                                // one control in the shell painted off-scheme.
+                                width: Math.max(2, parent.width * progressTrackContainer.shownRatio)
+                                height: parent.height
+                                radius: 2
+                                color: Theme.accent
 
                                 Behavior on width {
                                     enabled: !progressTrackContainer.isDragging
@@ -455,17 +523,18 @@ GlassPanel {
                             }
                         }
 
-                        // Draggable Circle Knob Handle
                         Rectangle {
                             id: knobHandle
+                            visible: !MediaService.buffering
                             width: seekMouse.containsMouse || progressTrackContainer.isDragging ? 12 : 8
                             height: width
                             radius: width / 2
-                            color: Theme.pink
+                            color: Theme.accent
                             border.color: Theme.bg
                             border.width: 1
                             anchors.verticalCenter: parent.verticalCenter
-                            x: Math.max(0, Math.min(progressTrackContainer.width - width, (progressTrackContainer.width * (progressTrackContainer.isDragging ? progressTrackContainer.dragRatio : MediaService.progress)) - (width / 2)))
+                            x: Math.max(0, Math.min(progressTrackContainer.width - width,
+                                   (progressTrackContainer.width * progressTrackContainer.shownRatio) - (width / 2)))
 
                             Behavior on width { NumberAnimation { duration: 100 } }
                             Behavior on x {
@@ -474,124 +543,141 @@ GlassPanel {
                             }
                         }
 
-                        // Mouse Scrub & Seek Handler
                         MouseArea {
                             id: seekMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            enabled: MediaService.durationKnown
+                            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
 
-                            onPositionChanged: (mouse) => {
-                                if (pressed) {
-                                    progressTrackContainer.dragRatio = Math.max(0.0, Math.min(1.0, mouse.x / width))
-                                }
+                            function ratioAt(mx) {
+                                return Math.max(0.0, Math.min(1.0, mx / width))
                             }
-                            onPressed: (mouse) => {
-                                progressTrackContainer.dragRatio = Math.max(0.0, Math.min(1.0, mouse.x / width))
+
+                            onPressed: mouse => {
+                                progressTrackContainer.dragRatio = ratioAt(mouse.x)
+                                progressTrackContainer.isDragging = true
                             }
-                            onReleased: (mouse) => {
-                                var ratio = Math.max(0.0, Math.min(1.0, mouse.x / width))
+                            onPositionChanged: mouse => {
+                                if (pressed) progressTrackContainer.dragRatio = ratioAt(mouse.x)
+                            }
+                            onReleased: mouse => {
+                                var ratio = ratioAt(mouse.x)
                                 progressTrackContainer.dragRatio = ratio
                                 MediaService.seek(ratio * MediaService.length)
+                                // Released only after the service has taken the
+                                // new position, so the handover is continuous.
+                                progressTrackContainer.isDragging = false
                             }
+                            onCanceled: progressTrackContainer.isDragging = false
                         }
                     }
 
-                    // Timestamps Row
                     RowLayout {
                         Layout.fillWidth: true
 
                         Text {
                             text: MediaService.positionStr
-                            color: Theme.comment
-                            font.pixelSize: 10
+                            color: Theme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fsCaption
                         }
 
                         Item { Layout.fillWidth: true }
 
                         Text {
-                            text: MediaService.lengthStr
-                            color: Theme.comment
-                            font.pixelSize: 10
+                            text: MediaService.buffering ? "Loading" : MediaService.lengthStr
+                            color: Theme.textMuted
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fsCaption
                         }
                     }
                 }
 
-                // Playback Controls Row
+                // Transport controls.
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
-                    spacing: 14
+                    Layout.topMargin: Theme.sp1
+                    spacing: Theme.sp3
+                    opacity: MediaService.hasPlayer ? 1.0 : Theme.disabledOpacity
+                    enabled: MediaService.hasPlayer
 
-                    // Previous Button
+                    Behavior on opacity { NumberAnimation { duration: 120 } }
+
                     Rectangle {
-                        width: 30
-                        height: 30
-                        radius: 6
-                        color: prevMouse.containsMouse ? Theme.currentLine : "transparent"
+                        width: 32
+                        height: 32
+                        radius: Theme.radiusChip
+                        color: prevMouse.containsMouse ? Theme.stateHover : "transparent"
 
                         Behavior on color { ColorAnimation { duration: 100 } }
 
                         MediaIcon {
                             iconType: "prev"
-                            color: prevMouse.containsMouse ? Theme.fg : Theme.comment
+                            color: prevMouse.containsMouse ? Theme.fg : Theme.textMuted
                             anchors.centerIn: parent
-                            implicitWidth: 12
-                            implicitHeight: 12
+                            implicitWidth: 13
+                            implicitHeight: 13
                         }
 
                         MouseArea {
                             id: prevMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: MediaService.previous()
                         }
                     }
 
-                    // Play/Pause Button
                     Rectangle {
-                        width: 34
-                        height: 34
-                        radius: 8
+                        width: 38
+                        height: 38
+                        radius: Theme.radiusPill
                         color: playMouse.containsMouse ? Theme.subAccent : Theme.accent
 
                         Behavior on color { ColorAnimation { duration: 100 } }
 
                         MediaIcon {
                             iconType: MediaService.status === "Playing" ? "pause" : "play"
-                            color: Theme.bg
+                            // Derived from the accent's own luminance, so the
+                            // glyph stays readable on light palettes where
+                            // Theme.bg was nearly the same value as the accent.
+                            color: Theme.accentFg
                             anchors.centerIn: parent
-                            implicitWidth: 14
-                            implicitHeight: 14
+                            implicitWidth: 15
+                            implicitHeight: 15
                         }
 
                         MouseArea {
                             id: playMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: MediaService.playPause()
                         }
                     }
 
-                    // Next Button
                     Rectangle {
-                        width: 30
-                        height: 30
-                        radius: 6
-                        color: nextMouse.containsMouse ? Theme.currentLine : "transparent"
+                        width: 32
+                        height: 32
+                        radius: Theme.radiusChip
+                        color: nextMouse.containsMouse ? Theme.stateHover : "transparent"
 
                         Behavior on color { ColorAnimation { duration: 100 } }
 
                         MediaIcon {
                             iconType: "next"
-                            color: nextMouse.containsMouse ? Theme.fg : Theme.comment
+                            color: nextMouse.containsMouse ? Theme.fg : Theme.textMuted
                             anchors.centerIn: parent
-                            implicitWidth: 12
-                            implicitHeight: 12
+                            implicitWidth: 13
+                            implicitHeight: 13
                         }
 
                         MouseArea {
                             id: nextMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: MediaService.next()
                         }
                     }
@@ -605,7 +691,7 @@ GlassPanel {
         id: weatherPopup
         anchor.window: window
         anchor.rect.x: Math.round(root.x + weatherBtn.x)
-        anchor.rect.y: 42
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Left
         visible: false
         color: "transparent"
@@ -670,7 +756,7 @@ GlassPanel {
 
                     Text {
                         text: WeatherService.getWeatherIcon(WeatherService.weatherCode)
-                        font.pixelSize: 24
+                        font.pixelSize: Theme.fsDisplay
                     }
 
                     ColumnLayout {
@@ -680,14 +766,15 @@ GlassPanel {
                         Text {
                             text: WeatherService.city
                             color: Theme.fg
-                            font.pixelSize: 13
+                            font.pixelSize: Theme.fsSubhead
                             font.weight: Font.Bold
                         }
 
                         Text {
                             text: WeatherService.condition + " • " + WeatherService.currentTempStr
-                            color: Theme.comment
-                            font.pixelSize: 11
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
                         }
                     }
                 }
@@ -720,22 +807,24 @@ GlassPanel {
 
                                 Text {
                                     text: modelData.day
-                                    color: Theme.comment
-                                    font.pixelSize: 9
+                                    color: Theme.textMuted
+                                    font.pixelSize: Theme.fsCaption
+                                    font.family: Theme.fontFamily
                                     font.weight: Font.Medium
                                     Layout.alignment: Qt.AlignHCenter
                                 }
 
                                 Text {
                                     text: modelData.icon
-                                    font.pixelSize: 14
+                                    font.pixelSize: Theme.fsSubhead
+                                    font.family: Theme.fontFamily
                                     Layout.alignment: Qt.AlignHCenter
                                 }
 
                                 Text {
                                     text: modelData.temp
                                     color: Theme.fg
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fsCaption
                                     font.weight: Font.Bold
                                     Layout.alignment: Qt.AlignHCenter
                                 }

@@ -3,7 +3,7 @@ import sys
 import json
 import os
 
-CONFIG_PATH = os.path.expanduser("~/.config/quickshell_user_pinned.json")
+CONFIG_PATH = os.path.expanduser("~/.config/huginn_user_pinned.json")
 
 def main():
     if len(sys.argv) > 1:

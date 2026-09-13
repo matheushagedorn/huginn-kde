@@ -145,13 +145,12 @@ deploy_configs() {
     # Symlinked to the repository, so git pull updates the config directly.
     safe_link "$SCRIPT_DIR/quickshell" "$CONFIG_DIR/quickshell"
 
-    for dir in alacritty fastfetch wallust; do
+    for dir in fastfetch wallust; do
         if [ -d "$SCRIPT_DIR/$dir" ] && [ -n "$(ls -A "$SCRIPT_DIR/$dir" 2>/dev/null)" ]; then
             safe_link "$SCRIPT_DIR/$dir" "$CONFIG_DIR/$dir"
         fi
     done
 
-    chmod +x "$SCRIPT_DIR/quickshell/toggle_launcher.sh" 2>/dev/null || true
     chmod +x "$SCRIPT_DIR/quickshell/services/python/"*.py 2>/dev/null || true
 
     success "Configuration linked."
@@ -171,45 +170,171 @@ deploy_kde_colorschemes() {
     success "Color schemes installed."
 }
 
+# Wallpapers are not shipped with Huginn. Each theme variant looks for a folder
+# named after it under ~/Pictures/Wallpapers, and falls back to whatever the
+# scanner finds there. This only creates the folder and says what to put in it.
 deploy_wallpapers() {
     local wp_base="$HOME/Pictures/Wallpapers"
-    if [ -d "$SCRIPT_DIR/quickshell/wallpapers" ]; then
-        info "Copying wallpapers to $wp_base..."
-        mkdir -p "$wp_base"
-        cp -rn "$SCRIPT_DIR/quickshell/wallpapers/"* "$wp_base/" 2>/dev/null || true
-        success "Wallpapers copied."
+    mkdir -p "$wp_base"
+    if [ -z "$(ls -A "$wp_base" 2>/dev/null)" ]; then
+        info "No wallpapers found in $wp_base."
+        info "Add one folder per theme, for example: $wp_base/Tokyo Night/"
     fi
 }
 
 # ------------------------------------------------------------------------------
-# 5. Helper scripts (used by the keyboard shortcuts)
+# 5. Helper scripts and their keyboard shortcuts
+#
+# Everything Huginn installs outside the repository is named huginn-*. The
+# shortcuts are registered here rather than left as a manual step, because a
+# name typed by hand in the System Settings dialog is a name that drifts.
 # ------------------------------------------------------------------------------
+HELPERS=(
+    "huginn-volume-up:quickshell ipc call volume increase"
+    "huginn-volume-down:quickshell ipc call volume decrease"
+    "huginn-volume-mute:quickshell ipc call volume mute"
+    "huginn-launcher:quickshell ipc call launcher toggle"
+    "huginn-lock:touch /tmp/huginn_lock_trigger 2>/dev/null || true; loginctl lock-session"
+)
+
 setup_helper_scripts() {
     info "Installing helper scripts into $LOCAL_BIN..."
     mkdir -p "$LOCAL_BIN"
 
-    cat > "$LOCAL_BIN/huginn-volume-up" <<'EOF'
-#!/usr/bin/env bash
-quickshell ipc call volume increase
+    local entry name body
+    for entry in "${HELPERS[@]}"; do
+        name="${entry%%:*}"
+        body="${entry#*:}"
+        printf '#!/usr/bin/env bash\n%s\n' "$body" > "$LOCAL_BIN/$name"
+        chmod +x "$LOCAL_BIN/$name"
+    done
+
+    success "Helper scripts installed (${#HELPERS[@]})."
+}
+
+# helper : key : label
+#
+# These take effect on the next login, not now. kglobalaccel lives inside
+# kwin_wayland and builds its shortcut table once, when the session starts, so a
+# .desktop written afterwards is simply not there. Registering over D-Bus from a
+# short-lived process creates the entry but never takes the key, so the installer
+# does not pretend otherwise: it writes the file and says to log out.
+SHORTCUTS=(
+    "huginn-volume-up:Volume Up:Volume Up"
+    "huginn-volume-down:Volume Down:Volume Down"
+    "huginn-volume-mute:Volume Mute:Mute"
+    "huginn-launcher:Meta:App Launcher"
+    "huginn-lock::"
+)
+
+# Plasma claims these keys through its own kmix component. Two components on one
+# key and neither answers reliably, so kmix gives them up. The second field of
+# the value is the default binding, kept so System Settings can still restore it.
+CONFLICTS=(
+    "kmix:increase_volume:Volume Up:Increase Volume"
+    "kmix:decrease_volume:Volume Down:Decrease Volume"
+    "kmix:mute:Volume Mute:Mute"
+)
+
+release_conflicting_shortcuts() {
+    command -v kwriteconfig6 >/dev/null 2>&1 || return 0
+    local entry comp action default_key label
+    for entry in "${CONFLICTS[@]}"; do
+        IFS=: read -r comp action default_key label <<< "$entry"
+        kwriteconfig6 --file kglobalshortcutsrc --group "$comp" --key "$action" \
+            "none,${default_key},${label}" 2>/dev/null || true
+    done
+}
+
+setup_shortcuts() {
+    if ! command -v kwriteconfig6 >/dev/null 2>&1; then
+        warn "kwriteconfig6 not found; skipping shortcut registration."
+        return
+    fi
+
+    info "Registering keyboard shortcuts..."
+    local apps_dir="$HOME/.local/share/applications"
+    mkdir -p "$apps_dir"
+
+    release_conflicting_shortcuts
+
+    local entry name key label desktop_id
+    for entry in "${SHORTCUTS[@]}"; do
+        IFS=: read -r name key label <<< "$entry"
+        desktop_id="net.local.${name}.desktop"
+
+        cat > "$apps_dir/$desktop_id" <<EOF
+[Desktop Entry]
+Exec=${LOCAL_BIN}/${name}
+Name=${label}
+NoDisplay=true
+StartupNotify=false
+Type=Application
+X-KDE-GlobalAccel-CommandShortcut=true
 EOF
 
-    cat > "$LOCAL_BIN/huginn-volume-down" <<'EOF'
-#!/usr/bin/env bash
-quickshell ipc call volume decrease
-EOF
+        [ -z "$key" ] && continue
+        kwriteconfig6 --file kglobalshortcutsrc \
+            --group "services" --group "$desktop_id" \
+            --key "_launch" "$key" 2>/dev/null || true
+    done
 
-    cat > "$LOCAL_BIN/huginn-volume-mute" <<'EOF'
-#!/usr/bin/env bash
-quickshell ipc call volume mute
-EOF
+    update-desktop-database "$apps_dir" >/dev/null 2>&1 || true
+    kbuildsycoca6 >/dev/null 2>&1 || true
+    success "Shortcuts written (they start working after the next login)."
+}
 
-    cat > "$LOCAL_BIN/huginn-launcher" <<'EOF'
-#!/usr/bin/env bash
-quickshell ipc call launcher toggle
-EOF
+# Removes the names this project used before it was called Huginn, so a machine
+# upgraded from the old layout does not keep two scripts doing the same thing.
+clean_legacy_names() {
+    local apps_dir="$HOME/.local/share/applications"
+    local legacy removed=0
+    for legacy in quickshell-volume-up quickshell-volume-down quickshell-volume-mute \
+                  quickshell-lock refresh-quickshell; do
+        [ -e "$LOCAL_BIN/$legacy" ] && { rm -f "$LOCAL_BIN/$legacy"; removed=1; }
+        [ -e "$apps_dir/net.local.${legacy}.desktop" ] && {
+            rm -f "$apps_dir/net.local.${legacy}.desktop"
+            # Deleting the key is what actually removes the binding; an empty
+            # group header is dropped the next time KConfig rewrites the file.
+            kwriteconfig6 --file kglobalshortcutsrc --group "services" \
+                --group "net.local.${legacy}.desktop" --key "_launch" --delete >/dev/null 2>&1 || true
+            removed=1
+        }
+    done
+    # The old launcher entry pointed straight at a script inside the repository.
+    if [ -e "$apps_dir/net.local.toggle_launcher.sh.desktop" ]; then
+        rm -f "$apps_dir/net.local.toggle_launcher.sh.desktop"
+        kwriteconfig6 --file kglobalshortcutsrc --group "services" \
+            --group "net.local.toggle_launcher.sh.desktop" --key "_launch" --delete >/dev/null 2>&1 || true
+        removed=1
+    fi
+    # Units carried the old name before the rename.
+    local unit
+    for unit in quickshell.service quickshell-recolor-watcher.service; do
+        if [ -f "$CONFIG_DIR/systemd/user/$unit" ]; then
+            systemctl --user disable --now "$unit" >/dev/null 2>&1 || true
+            rm -f "$CONFIG_DIR/systemd/user/$unit"
+            removed=1
+        fi
+    done
 
-    chmod +x "$LOCAL_BIN"/huginn-*
-    success "Helper scripts installed."
+    # State files named after the framework rather than the project.
+    local state
+    for state in current_theme.txt user_wallpaper.json user_pinned.json; do
+        if [ -f "$CONFIG_DIR/quickshell_$state" ] && [ ! -f "$CONFIG_DIR/huginn_$state" ]; then
+            mv "$CONFIG_DIR/quickshell_$state" "$CONFIG_DIR/huginn_$state"
+            removed=1
+        fi
+    done
+
+    # KDE colour schemes were prefixed "QS " before the project had a name.
+    local scheme
+    for scheme in "$DATA_DIR"/color-schemes/*.colors; do
+        [ -f "$scheme" ] || continue
+        sed -i 's/^Name=QS /Name=Huginn /' "$scheme" 2>/dev/null || true
+    done
+    [ "$removed" = 1 ] && info "Removed leftovers from the pre-Huginn layout."
+    return 0
 }
 
 # ------------------------------------------------------------------------------
@@ -241,11 +366,35 @@ Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h
 WantedBy=graphical-session.target
 EOF
 
-    systemctl --user daemon-reload
-    systemctl --user enable huginn.service >/dev/null 2>&1 || warn "Could not enable the service automatically."
-    systemctl --user restart huginn.service || warn "Could not start the service automatically."
+    # Recolors the wallpaper with lutgen whenever the theme changes, and
+    # repaints the Papirus folder icons. Safe to run unattended only because
+    # setup_icon_theme put Papirus under the user's own directory: from
+    # /usr/share, papirus-folders re-invokes itself with sudo, and with no TTY
+    # to answer it that turns into a loop that locks the account via faillock.
+    cat > "$service_dir/huginn-recolor-watcher.service" <<EOF
+[Unit]
+Description=Huginn wallpaper recolor watcher
+After=graphical-session.target
+PartOf=graphical-session.target
 
-    success "Service configured (huginn.service)."
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.config/quickshell/services/python/recolor_watcher.py
+Restart=always
+RestartSec=3
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h/.local/bin:%h/.cargo/bin
+
+[Install]
+WantedBy=graphical-session.target
+EOF
+
+    systemctl --user daemon-reload
+    for unit in huginn.service huginn-recolor-watcher.service; do
+        systemctl --user enable "$unit" >/dev/null 2>&1 || warn "Could not enable $unit automatically."
+        systemctl --user restart "$unit" || warn "Could not start $unit automatically."
+    done
+
+    success "Services configured (huginn.service, huginn-recolor-watcher.service)."
 }
 
 # ------------------------------------------------------------------------------
@@ -285,7 +434,9 @@ setup_icon_theme
 deploy_configs
 deploy_kde_colorschemes
 deploy_wallpapers
+clean_legacy_names
 setup_helper_scripts
+setup_shortcuts
 setup_systemd_service
 disable_native_volume_osd
 
@@ -294,11 +445,19 @@ echo -e "${GREEN}${BOLD}=================================================="
 echo "   Huginn installed                               "
 echo -e "==================================================${NC}"
 echo
-echo -e "${BOLD}Keyboard shortcuts (System Settings → Keyboard → Shortcuts → Add New → Command or Script):${NC}"
-echo "  Launcher      →  $LOCAL_BIN/huginn-launcher        (suggested: Meta)"
-echo "  Volume up     →  $LOCAL_BIN/huginn-volume-up       (physical volume key)"
-echo "  Volume down   →  $LOCAL_BIN/huginn-volume-down     (physical volume key)"
-echo "  Mute          →  $LOCAL_BIN/huginn-volume-mute     (physical mute key)"
+echo -e "${BOLD}${YELLOW}Log out and back in to finish.${NC}"
+echo "  KDE builds its keyboard shortcut table when the session starts, so the"
+echo "  keys below do nothing until then. Nothing else is pending."
+echo
+echo -e "${BOLD}Keyboard shortcuts:${NC}"
+echo "  Meta          →  huginn-launcher"
+echo "  Volume Up     →  huginn-volume-up"
+echo "  Volume Down   →  huginn-volume-down"
+echo "  Volume Mute   →  huginn-volume-mute"
+echo "  (no key)      →  huginn-lock"
+echo
+echo "  The scripts are in $LOCAL_BIN and the bindings are listed under"
+echo "  System Settings → Keyboard → Shortcuts."
 echo
 echo -e "${BOLD}Useful commands:${NC}"
 echo "  systemctl --user restart huginn.service"

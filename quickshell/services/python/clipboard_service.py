@@ -6,7 +6,7 @@ import json
 import sys
 
 def check_clipboard():
-    clip_dir = '/tmp/quickshell_clip'
+    clip_dir = '/tmp/huginn_clip'
     os.makedirs(clip_dir, exist_ok=True)
     items = []
 
@@ -89,7 +89,7 @@ def check_clipboard():
     print(json.dumps(items), flush=True)
 
 def wipe_clipboard():
-    clip_dir = '/tmp/quickshell_clip'
+    clip_dir = '/tmp/huginn_clip'
     try:
         subprocess.run(['cliphist', 'wipe'], stderr=subprocess.DEVNULL, timeout=1.0)
     except Exception:

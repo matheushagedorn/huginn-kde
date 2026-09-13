@@ -10,7 +10,7 @@ import "../../theme"
 GlassPanel {
     id: root
     implicitWidth: mainLayout.implicitWidth + 24
-    implicitHeight: 36
+    implicitHeight: Theme.barHeight - 4
 
     property var activeTrayItem: null
     property var activeTrayMenuOpener: null
@@ -127,7 +127,7 @@ GlassPanel {
         Rectangle {
             id: notifBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: PopupService.notificationMenuOpen ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.2) : (notifMouse.containsMouse ? Theme.currentLine : "transparent")
             border.color: PopupService.notificationMenuOpen ? Theme.accent : "transparent"
@@ -135,22 +135,16 @@ GlassPanel {
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
-            Image {
+            // Papirus draws `indicator-notification-*` as a mailbox, which is
+            // not what anyone reads as "notifications" in a status bar. This is
+            // the theme's own bell, so it keeps the fill and weight of the
+            // icons next to it.
+            BellIcon {
                 anchors.centerIn: parent
-                width: 16
-                height: 16
-                sourceSize.width: 16
-                sourceSize.height: 16
-                fillMode: Image.PreserveAspectFit
-                source: {
-                    let base = "file://" + Theme.iconsDir + "/" + Theme.panelIconDir + "/24x24/panel/"
-                    let hasUnread = NotificationService.notifications.length > 0
-                    if (NotificationService.isDnd) {
-                        return hasUnread ? base + "indicator-notification-unread-dnd.svg" : base + "indicator-notification-read-dnd.svg"
-                    } else {
-                        return hasUnread ? base + "indicator-notification-unread.svg" : base + "indicator-notification-read.svg"
-                    }
-                }
+                implicitWidth: 16
+                implicitHeight: 16
+                isDnd: NotificationService.isDnd
+                hasUnread: NotificationService.notifications.length > 0
             }
 
             MouseArea {
@@ -165,7 +159,7 @@ GlassPanel {
         Rectangle {
             id: captureBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: PopupService.captureMenuOpen ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.2) : (captureMouse.containsMouse ? Theme.currentLine : "transparent")
             border.color: PopupService.captureMenuOpen ? Theme.accent : "transparent"
@@ -195,7 +189,7 @@ GlassPanel {
         Rectangle {
             id: clipBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: PopupService.clipboardMenuOpen ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.2) : (clipMouse.containsMouse ? Theme.currentLine : "transparent")
             border.color: PopupService.clipboardMenuOpen ? Theme.accent : "transparent"
@@ -228,7 +222,7 @@ GlassPanel {
         Rectangle {
             id: audioBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: PopupService.audioMenuOpen ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.2) : (audioMouse.containsMouse ? Theme.currentLine : "transparent")
             border.color: PopupService.audioMenuOpen ? Theme.accent : "transparent"
@@ -266,7 +260,7 @@ GlassPanel {
             id: btBtn
             visible: BluetoothService.hasAdapter
             Layout.preferredWidth: visible ? 26 : 0
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: btMouse.containsMouse ? Theme.currentLine : "transparent"
 
@@ -295,7 +289,7 @@ GlassPanel {
         Rectangle {
             id: brightBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: brightMouse.containsMouse ? Theme.currentLine : "transparent"
 
@@ -332,7 +326,7 @@ GlassPanel {
         Rectangle {
             id: mountBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: mountMouse.containsMouse ? Theme.currentLine : "transparent"
 
@@ -363,7 +357,7 @@ GlassPanel {
         Rectangle {
             id: netBtn
             Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredHeight: Theme.barCapsule
             radius: 6
             color: netMouse.containsMouse ? Theme.currentLine : "transparent"
 
@@ -398,7 +392,7 @@ GlassPanel {
         id: captureMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -460,9 +454,10 @@ GlassPanel {
 
                 // Header
                 Text {
-                    text: "Screen Capture & Recording"
+                    text: "Capture and record"
                     color: Theme.fg
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fsStrong
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
@@ -475,9 +470,10 @@ GlassPanel {
 
                 // Section 1: Screenshots
                 Text {
-                    text: "TAKE SCREENSHOT"
-                    color: Theme.comment
-                    font.pixelSize: 9
+                    text: "Take a screenshot"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fsCaption
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
@@ -500,9 +496,9 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "✂️"; font.pixelSize: 11; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Region Screenshot"; color: Theme.fg; font.pixelSize: 10; font.weight: Font.Medium; Layout.fillWidth: true }
-                            Text { text: "Super+Shift+S"; color: Theme.comment; font.pixelSize: 8 }
+                            Text { text: "✂️"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Selected region"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
+                            Text { text: "Super+Shift+S"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
 
                         MouseArea {
@@ -531,9 +527,9 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "🖥️"; font.pixelSize: 11; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Fullscreen Screenshot"; color: Theme.fg; font.pixelSize: 10; font.weight: Font.Medium; Layout.fillWidth: true }
-                            Text { text: "PrintScreen"; color: Theme.comment; font.pixelSize: 8 }
+                            Text { text: "🖥️"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Whole screen"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
+                            Text { text: "PrintScreen"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
 
                         MouseArea {
@@ -562,9 +558,9 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "🪟"; font.pixelSize: 11; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Active Window"; color: Theme.fg; font.pixelSize: 10; font.weight: Font.Medium; Layout.fillWidth: true }
-                            Text { text: "Super+Print"; color: Theme.comment; font.pixelSize: 8 }
+                            Text { text: "🪟"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Active window"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
+                            Text { text: "Super+Print"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
 
                         MouseArea {
@@ -588,9 +584,10 @@ GlassPanel {
 
                 // Section 2: Screen Recording
                 Text {
-                    text: "RECORD VIDEO"
-                    color: Theme.comment
-                    font.pixelSize: 9
+                    text: "Record video"
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fsCaption
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
@@ -613,9 +610,9 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "🎥"; font.pixelSize: 11; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Record Region"; color: Theme.fg; font.pixelSize: 10; font.weight: Font.Medium; Layout.fillWidth: true }
-                            Text { text: "Super+Alt+R"; color: Theme.comment; font.pixelSize: 8 }
+                            Text { text: "🎥"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Selected region"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
+                            Text { text: "Super+Alt+R"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
 
                         MouseArea {
@@ -644,9 +641,9 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "📽️"; font.pixelSize: 11; Layout.alignment: Qt.AlignVCenter }
-                            Text { text: "Record Screen"; color: Theme.fg; font.pixelSize: 10; font.weight: Font.Medium; Layout.fillWidth: true }
-                            Text { text: "Super+Alt+F"; color: Theme.comment; font.pixelSize: 8 }
+                            Text { text: "📽️"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            Text { text: "Whole screen"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
+                            Text { text: "Super+Alt+F"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
 
                         MouseArea {
@@ -679,9 +676,10 @@ GlassPanel {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "Open Spectacle Studio"
+                        text: "Open Spectacle"
                         color: Theme.accent
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -703,7 +701,7 @@ GlassPanel {
         id: notifMenu
         anchor.window: window
         anchor.rect.x: root.x + (root.width / 2) - (implicitWidth / 2)
-        anchor.rect.y: 42
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
@@ -770,48 +768,76 @@ GlassPanel {
                     Text {
                         text: "Notifications"
                         color: Theme.fg
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
                     Item { Layout.fillWidth: true }
 
-                    // DND Toggle Button
+                    // Do Not Disturb. The label keeps the same name in both
+                    // states — a dot and the fill carry which one it is, so
+                    // the state does not rely on colour alone. It used to read
+                    // "DND: ON" in a fixed 58px pill that the text overran.
                     Rectangle {
-                        width: 58; height: 20; radius: 4
-                        color: NotificationService.isDnd ? Qt.rgba(Theme.subAccent.r, Theme.subAccent.g, Theme.subAccent.b, 0.2) : (dndBtnMouse.containsMouse ? Theme.currentLine : (Theme.isDark ? Theme.currentLine : Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.08)))
-                        border.color: NotificationService.isDnd ? Theme.subAccent : Theme.currentLine
+                        implicitWidth: dndRow.implicitWidth + Theme.sp3
+                        height: 24
+                        radius: Theme.radiusChip
+                        color: NotificationService.isDnd
+                               ? Qt.rgba(Theme.subAccent.r, Theme.subAccent.g, Theme.subAccent.b, 0.2)
+                               : (dndBtnMouse.containsMouse ? Theme.stateHover : "transparent")
+                        border.color: NotificationService.isDnd ? Theme.subAccent : Theme.separator
                         border.width: 1
 
-                        Text {
+                        Behavior on color { ColorAnimation { duration: 120 } }
+
+                        RowLayout {
+                            id: dndRow
                             anchors.centerIn: parent
-                            text: NotificationService.isDnd ? "DND: ON" : "DND: OFF"
-                            color: NotificationService.isDnd ? Theme.subAccent : Theme.comment
-                            font.pixelSize: 9
-                            font.weight: Font.Bold
+                            spacing: 5
+
+                            Rectangle {
+                                width: 6
+                                height: 6
+                                radius: 3
+                                color: NotificationService.isDnd ? Theme.subAccentText : Theme.textMuted
+                            }
+
+                            Text {
+                                text: "Do not disturb"
+                                color: NotificationService.isDnd ? Theme.subAccentText : Theme.textMuted
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
+                                font.weight: Font.DemiBold
+                            }
                         }
 
                         MouseArea {
                             id: dndBtnMouse
                             anchors.fill: parent
                             hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
                             onClicked: NotificationService.toggleDnd()
                         }
                     }
 
                     Rectangle {
-                        width: 60; height: 20; radius: 4
+                        implicitWidth: clearNotifLabel.implicitWidth + Theme.sp3
+                        height: 24
+                        radius: Theme.radiusChip
                         visible: NotificationService.notifications.length > 0
                         color: clearNotifMouse.containsMouse ? Qt.rgba(Theme.red.r, Theme.red.g, Theme.red.b, 0.2) : "transparent"
-                        border.color: Theme.red
+                        border.color: Theme.danger
                         border.width: 1
 
                         Text {
+                            id: clearNotifLabel
                             anchors.centerIn: parent
-                            text: "Clear All"
-                            color: Theme.red
-                            font.pixelSize: 9
-                            font.weight: Font.Bold
+                            text: "Clear all"
+                            color: Theme.danger
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
+                            font.weight: Font.DemiBold
                         }
 
                         MouseArea {
@@ -845,8 +871,9 @@ GlassPanel {
                         // Empty State
                         Text {
                             text: NotificationService.isDnd ? "Do Not Disturb is active" : "No new notifications"
-                            color: Theme.comment
-                            font.pixelSize: 10
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.italic: true
                             visible: NotificationService.notifications.length === 0
                             Layout.alignment: Qt.AlignHCenter
@@ -886,9 +913,12 @@ GlassPanel {
                                             Text {
                                                 id: appText
                                                 anchors.centerIn: parent
-                                                text: modelData.app.toUpperCase()
+                                                // The app names itself; shouting
+                                                // it back is not our call.
+                                                text: modelData.app
                                                 color: Theme.accent
-                                                font.pixelSize: 8
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 font.weight: Font.Bold
                                             }
                                         }
@@ -897,14 +927,16 @@ GlassPanel {
 
                                         Text {
                                             text: modelData.time
-                                            color: Theme.comment
-                                            font.pixelSize: 9
+                                            color: Theme.textMuted
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                         }
 
                                         Text {
                                             text: "✕"
                                             color: delNotifMouse.containsMouse ? Theme.red : Theme.comment
-                                            font.pixelSize: 10
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                             MouseArea {
                                                 id: delNotifMouse
                                                 anchors.fill: parent
@@ -917,7 +949,8 @@ GlassPanel {
                                     Text {
                                         text: modelData.summary
                                         color: Theme.fg
-                                        font.pixelSize: 11
+                                        font.pixelSize: Theme.fsBody
+                                        font.family: Theme.fontFamily
                                         font.weight: Font.Bold
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
@@ -925,8 +958,9 @@ GlassPanel {
 
                                     Text {
                                         text: modelData.body
-                                        color: Theme.comment
-                                        font.pixelSize: 10
+                                        color: Theme.textMuted
+                                        font.pixelSize: Theme.fsCaption
+                                        font.family: Theme.fontFamily
                                         maximumLineCount: 3
                                         wrapMode: Text.WrapAnywhere
                                         elide: Text.ElideRight
@@ -947,7 +981,7 @@ GlassPanel {
         id: clipMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -1014,9 +1048,10 @@ GlassPanel {
                     spacing: 6
 
                     Text {
-                        text: "Clipboard Manager"
+                        text: "Clipboard"
                         color: Theme.fg
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -1032,7 +1067,8 @@ GlassPanel {
                             anchors.centerIn: parent
                             text: "Restart"
                             color: Theme.accent
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -1053,9 +1089,10 @@ GlassPanel {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Clear All"
+                            text: "Clear all"
                             color: Theme.red
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -1091,8 +1128,9 @@ GlassPanel {
                         // Empty State
                         Text {
                             text: "Clipboard is empty"
-                            color: Theme.comment
-                            font.pixelSize: 10
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.italic: true
                             visible: ClipboardService.items.length === 0
                             Layout.alignment: Qt.AlignHCenter
@@ -1142,23 +1180,26 @@ GlassPanel {
                                                 anchors.centerIn: parent
                                                 text: (modelData && modelData.type === "image") ? "IMAGE" : "TEXT"
                                                 color: (modelData && modelData.type === "image") ? Theme.subAccent : Theme.accent
-                                                font.pixelSize: 8
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 font.weight: Font.Bold
                                             }
                                         }
 
                                         Text {
                                             text: modelData ? (modelData.type === "image" ? (modelData.size || "") : ((modelData.length || 0) + " chars")) : ""
-                                            color: Theme.comment
-                                            font.pixelSize: 9
+                                            color: Theme.textMuted
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                         }
 
                                         Item { Layout.fillWidth: true }
 
                                         Text {
                                             text: (modelData && modelData.time) ? modelData.time : ""
-                                            color: Theme.comment
-                                            font.pixelSize: 9
+                                            color: Theme.textMuted
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                         }
 
                                         Rectangle {
@@ -1170,7 +1211,7 @@ GlassPanel {
                                                 anchors.centerIn: parent
                                                 text: "✕"
                                                 color: delMouse.containsMouse ? Theme.red : Theme.comment
-                                                font.pixelSize: 10
+                                                font.pixelSize: Theme.fsCaption
                                             }
 
                                             MouseArea {
@@ -1202,7 +1243,8 @@ GlassPanel {
                                         visible: modelData && modelData.type === "text"
                                         text: (modelData && modelData.type === "text" && modelData.content) ? modelData.content : ""
                                         color: Theme.fg
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fsCaption
+                                        font.family: Theme.fontFamily
                                         maximumLineCount: 4
                                         wrapMode: Text.WrapAnywhere
                                         elide: Text.ElideRight
@@ -1222,7 +1264,7 @@ GlassPanel {
         id: btMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -1287,7 +1329,8 @@ GlassPanel {
                     Text {
                         text: "Bluetooth"
                         color: Theme.fg
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -1304,7 +1347,8 @@ GlassPanel {
                             anchors.centerIn: parent
                             text: BluetoothService.isPowered ? "ON" : "OFF"
                             color: BluetoothService.isPowered ? Theme.accent : Theme.comment
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -1319,7 +1363,7 @@ GlassPanel {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshBtMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.comment; font.pixelSize: 12; anchors.centerIn: parent }
+                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
                         MouseArea {
                             id: refreshBtMouse
                             anchors.fill: parent
@@ -1345,8 +1389,9 @@ GlassPanel {
                     Text {
                         anchors.centerIn: parent
                         text: "Bluetooth is turned off"
-                        color: Theme.comment
-                        font.pixelSize: 11
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsBody
+                        font.family: Theme.fontFamily
                         font.italic: true
                     }
                 }
@@ -1365,9 +1410,10 @@ GlassPanel {
 
                         // Connected Devices Section
                         Text {
-                            text: "CONNECTED DEVICES"
-                            color: Theme.comment
-                            font.pixelSize: 9
+                            text: "Connected"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -1377,8 +1423,9 @@ GlassPanel {
 
                             Text {
                                 text: "No connected devices"
-                                color: Theme.comment
-                                font.pixelSize: 10
+                                color: Theme.textMuted
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                                 font.italic: true
                                 visible: BluetoothService.connectedDevices.length === 0
                             }
@@ -1405,7 +1452,8 @@ GlassPanel {
                                         Text {
                                             text: modelData.name
                                             color: Theme.accent
-                                            font.pixelSize: 10
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                             font.weight: Font.Bold
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
@@ -1421,7 +1469,8 @@ GlassPanel {
                                                 anchors.centerIn: parent
                                                 text: "Disconnect"
                                                 color: Theme.red
-                                                font.pixelSize: 8
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 font.weight: Font.Bold
                                             }
 
@@ -1439,9 +1488,10 @@ GlassPanel {
 
                         // Available / Paired Devices Section
                         Text {
-                            text: "AVAILABLE / PAIRED DEVICES"
-                            color: Theme.comment
-                            font.pixelSize: 9
+                            text: "Available and paired"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -1451,8 +1501,9 @@ GlassPanel {
 
                             Text {
                                 text: "No available devices"
-                                color: Theme.comment
-                                font.pixelSize: 10
+                                color: Theme.textMuted
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                                 font.italic: true
                                 visible: BluetoothService.availableDevices.length === 0
                             }
@@ -1472,12 +1523,13 @@ GlassPanel {
                                         anchors.rightMargin: 8
                                         spacing: 6
 
-                                        Rectangle { width: 6; height: 6; radius: 3; color: Theme.comment }
+                                        Rectangle { width: 6; height: 6; radius: 3; color: Theme.textMuted }
 
                                         Text {
                                             text: modelData.name
                                             color: Theme.fg
-                                            font.pixelSize: 10
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
                                         }
@@ -1492,7 +1544,8 @@ GlassPanel {
                                                 anchors.centerIn: parent
                                                 text: "Connect"
                                                 color: Theme.accent
-                                                font.pixelSize: 8
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 font.weight: Font.Bold
                                             }
 
@@ -1524,7 +1577,7 @@ GlassPanel {
         id: audioMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -1587,9 +1640,10 @@ Connections {
                     Layout.fillWidth: true
 
                     Text {
-                        text: "Master Volume"
+                        text: "Master volume"
                         color: Theme.fg
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -1598,7 +1652,8 @@ Connections {
                     Text {
                         text: AudioService.volumeStr
                         color: Theme.accent
-                        font.pixelSize: 11
+                        font.pixelSize: Theme.fsBody
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
                 }
@@ -1659,7 +1714,7 @@ Connections {
                 // Mute Toggle Button
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 26
+                    Layout.preferredHeight: Theme.barCapsule
                     radius: 5
                     color: muteBtnMouse.containsMouse ? Theme.currentLine : (Theme.isDark ? Theme.currentLine : Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.08))
                     border.color: Theme.currentLine
@@ -1679,7 +1734,8 @@ Connections {
                         Text {
                             text: AudioService.isMuted ? "Unmute Audio" : "Mute Audio"
                             color: AudioService.isMuted ? Theme.red : Theme.fg
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Medium
                         }
                     }
@@ -1712,9 +1768,10 @@ Connections {
 
                         // Output Devices Section
                         Text {
-                            text: "OUTPUT DEVICES"
-                            color: Theme.comment
-                            font.pixelSize: 9
+                            text: "Outputs"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -1747,7 +1804,8 @@ Connections {
                                         Text {
                                             text: modelData.name
                                             color: modelData.isActive ? (Theme.isDark ? Theme.accent : Theme.fg) : Theme.fg
-                                            font.pixelSize: 10
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                             font.weight: modelData.isActive ? Font.Bold : Font.Normal
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
@@ -1773,9 +1831,10 @@ Connections {
 
                         // Input Devices Section
                         Text {
-                            text: "INPUT DEVICES"
-                            color: Theme.comment
-                            font.pixelSize: 9
+                            text: "Inputs"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -1808,7 +1867,8 @@ Connections {
                                         Text {
                                             text: modelData.name
                                             color: modelData.isActive ? Theme.accent : Theme.fg
-                                            font.pixelSize: 10
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                             font.weight: modelData.isActive ? Font.Bold : Font.Normal
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
@@ -1835,7 +1895,7 @@ Connections {
         id: brightMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -1898,9 +1958,10 @@ Connections {
                     Layout.fillWidth: true
 
                     Text {
-                        text: "Brightness Controls"
+                        text: "Brightness"
                         color: Theme.fg
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -1909,7 +1970,7 @@ Connections {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshBrightMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.comment; font.pixelSize: 12; anchors.centerIn: parent }
+                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
                         MouseArea {
                             id: refreshBrightMouse
                             anchors.fill: parent
@@ -1957,7 +2018,8 @@ Connections {
                                     Text {
                                         text: modelData.name
                                         color: Theme.fg
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fsCaption
+                                        font.family: Theme.fontFamily
                                         font.weight: Font.Bold
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
@@ -1966,7 +2028,8 @@ Connections {
                                     Text {
                                         text: Math.round(devSliderTrack.currentPct) + "%"
                                         color: modelData.type === "kbd" ? Theme.subAccent : Theme.accent
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fsCaption
+                                        font.family: Theme.fontFamily
                                         font.weight: Font.Bold
                                     }
                                 }
@@ -2041,7 +2104,7 @@ Connections {
         id: mountMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -2104,9 +2167,10 @@ Connections {
                     Layout.fillWidth: true
 
                     Text {
-                        text: "External Storage"
+                        text: "External storage"
                         color: Theme.fg
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -2115,7 +2179,7 @@ Connections {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshMountMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.comment; font.pixelSize: 12; anchors.centerIn: parent }
+                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
                         MouseArea {
                             id: refreshMountMouse
                             anchors.fill: parent
@@ -2151,7 +2215,7 @@ Connections {
                                 implicitHeight: devItemCol.implicitHeight + 14
                                 radius: 6
                                 color: modelData.isMounted ? (Theme.isDark ? Qt.rgba(80/255, 250/255, 123/255, 0.1) : Qt.rgba(80/255, 250/255, 123/255, 0.18)) : Theme.surface
-                                border.color: modelData.isMounted ? (Theme.isDark ? Theme.green : "#15803d") : Theme.currentLine
+                                border.color: modelData.isMounted ? Theme.success : Theme.currentLine
                                 border.width: 1
 
                                 ColumnLayout {
@@ -2166,13 +2230,14 @@ Connections {
 
                                         Rectangle {
                                             width: 6; height: 6; radius: 3
-                                            color: modelData.isMounted ? (Theme.isDark ? Theme.green : "#15803d") : Theme.comment
+                                            color: modelData.isMounted ? Theme.success : Theme.comment
                                         }
 
                                         Text {
                                             text: modelData.label + " (" + modelData.size + ")"
-                                            color: modelData.isMounted ? (Theme.isDark ? Theme.green : "#15803d") : Theme.fg
-                                            font.pixelSize: 10
+                                            color: modelData.isMounted ? Theme.success : Theme.fg
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                             font.weight: Font.Bold
                                             elide: Text.ElideRight
                                             Layout.fillWidth: true
@@ -2180,15 +2245,17 @@ Connections {
 
                                         Text {
                                             text: modelData.isMounted ? "Mounted" : "Unmounted"
-                                            color: modelData.isMounted ? (Theme.isDark ? Theme.green : "#15803d") : Theme.comment
-                                            font.pixelSize: 9
+                                            color: modelData.isMounted ? Theme.success : Theme.comment
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
                                         }
                                     }
 
                                     Text {
                                         text: modelData.vendor
-                                        color: Theme.comment
-                                        font.pixelSize: 9
+                                        color: Theme.textMuted
+                                        font.pixelSize: Theme.fsCaption
+                                        font.family: Theme.fontFamily
                                         elide: Text.ElideRight
                                         visible: modelData.vendor !== ""
                                     }
@@ -2211,7 +2278,8 @@ Connections {
                                                 anchors.centerIn: parent
                                                 text: modelData.isMounted ? "Unmount" : "Mount"
                                                 color: modelData.isMounted ? Theme.red : Theme.accent
-                                                font.pixelSize: 9
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 font.weight: Font.Bold
                                             }
 
@@ -2234,9 +2302,10 @@ Connections {
 
                                             Text {
                                                 anchors.centerIn: parent
-                                                text: "Mount & Open"
+                                                text: "Mount and open"
                                                 color: Theme.subAccent
-                                                font.pixelSize: 9
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 font.weight: Font.Bold
                                             }
 
@@ -2256,14 +2325,15 @@ Connections {
                                             radius: 4
                                             property bool autoOn: MountService.autoMountMap[modelData.dev] === true
                                             color: autoOn ? Qt.rgba(80/255, 250/255, 123/255, 0.2) : (autoBtnMouse.containsMouse ? Theme.currentLine : (Theme.isDark ? Theme.currentLine : Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.08)))
-                                            border.color: autoOn ? (Theme.isDark ? Theme.green : "#15803d") : Theme.currentLine
+                                            border.color: autoOn ? Theme.success : Theme.currentLine
                                             border.width: 1
 
                                             Text {
                                                 anchors.centerIn: parent
                                                 text: autoToggleBtn.autoOn ? "Auto: ON" : "Auto: OFF"
-                                                color: autoToggleBtn.autoOn ? (Theme.isDark ? Theme.green : "#15803d") : Theme.comment
-                                                font.pixelSize: 9
+                                                color: autoToggleBtn.autoOn ? Theme.success : Theme.comment
+                                                font.pixelSize: Theme.fsCaption
+                                                font.family: Theme.fontFamily
                                                 font.weight: Font.Bold
                                             }
 
@@ -2289,7 +2359,7 @@ Connections {
         id: netMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -2352,9 +2422,10 @@ Connections {
                     Layout.fillWidth: true
 
                     Text {
-                        text: "Wi-Fi Networks"
+                        text: "Wi-Fi networks"
                         color: Theme.fg
-                        font.pixelSize: 12
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                     }
 
@@ -2371,7 +2442,8 @@ Connections {
                             anchors.centerIn: parent
                             text: NetworkService.isWifiPowered ? "ON" : "OFF"
                             color: NetworkService.isWifiPowered ? Theme.accent : Theme.comment
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
@@ -2386,7 +2458,7 @@ Connections {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshNetMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.comment; font.pixelSize: 12; anchors.centerIn: parent }
+                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
                         MouseArea {
                             id: refreshNetMouse
                             anchors.fill: parent
@@ -2409,7 +2481,7 @@ Connections {
                     implicitHeight: ethColLayout.implicitHeight + 12
                     radius: 6
                     color: NetworkService.ethernetConnected ? (Theme.isDark ? Qt.rgba(80/255, 250/255, 123/255, 0.15) : Qt.rgba(80/255, 250/255, 123/255, 0.22)) : Theme.surface
-                    border.color: NetworkService.ethernetConnected ? (Theme.isDark ? Theme.green : "#15803d") : Theme.currentLine
+                    border.color: NetworkService.ethernetConnected ? Theme.success : Theme.currentLine
                     border.width: 1
 
                     RowLayout {
@@ -2424,7 +2496,8 @@ Connections {
                         Text {
                             text: "Ethernet (" + (NetworkService.ethernetConnected ? "Connected" : "Disconnected") + ")"
                             color: NetworkService.ethernetConnected ? Theme.green : Theme.fg
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: NetworkService.ethernetConnected ? Font.Bold : Font.Normal
                             Layout.fillWidth: true
                         }
@@ -2440,8 +2513,9 @@ Connections {
                     Text {
                         anchors.centerIn: parent
                         text: "Wi-Fi is turned off"
-                        color: Theme.comment
-                        font.pixelSize: 11
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsBody
+                        font.family: Theme.fontFamily
                         font.italic: true
                     }
                 }
@@ -2460,8 +2534,9 @@ Connections {
 
                         Text {
                             text: "Wi-Fi is turned off"
-                            color: Theme.comment
-                            font.pixelSize: 10
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.italic: true
                             visible: !NetworkService.isWifiPowered
                         }
@@ -2471,7 +2546,7 @@ Connections {
 
                             Rectangle {
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 26
+                                Layout.preferredHeight: Theme.barCapsule
                                 radius: 5
                                 color: modelData.inUse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18) : (netItemMouse.containsMouse ? Theme.currentLine : "transparent")
                                 border.color: modelData.inUse ? Theme.accent : "transparent"
@@ -2493,7 +2568,8 @@ Connections {
                                     Text {
                                         text: modelData.ssid
                                         color: modelData.inUse ? Theme.accent : Theme.fg
-                                        font.pixelSize: 10
+                                        font.pixelSize: Theme.fsCaption
+                                        font.family: Theme.fontFamily
                                         font.weight: modelData.inUse ? Font.Bold : Font.Normal
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
@@ -2502,7 +2578,8 @@ Connections {
                                     Text {
                                         text: modelData.inUse ? "Connected" : modelData.signal + "%"
                                         color: modelData.inUse ? Theme.accent : Theme.comment
-                                        font.pixelSize: 9
+                                        font.pixelSize: Theme.fsCaption
+                                        font.family: Theme.fontFamily
                                     }
                                 }
 
@@ -2529,7 +2606,7 @@ Connections {
         id: batMenu
         anchor.window: window
         anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Right
         visible: false
         color: "transparent"
@@ -2589,9 +2666,10 @@ Connections {
 
                 // Header
                 Text {
-                    text: "Battery & Power"
+                    text: "Battery and power"
                     color: Theme.fg
-                    font.pixelSize: 12
+                    font.pixelSize: Theme.fsStrong
+                    font.family: Theme.fontFamily
                     font.weight: Font.Bold
                 }
 
@@ -2623,14 +2701,16 @@ Connections {
                             Text {
                                 text: BatteryService.percentage + "% (" + (BatteryService.isCharging ? "Charging" : "Discharging") + ")"
                                 color: Theme.fg
-                                font.pixelSize: 11
+                                font.pixelSize: Theme.fsBody
+                                font.family: Theme.fontFamily
                                 font.weight: Font.Bold
                             }
 
                             Text {
                                 text: "Battery Health: " + BatteryService.healthPercent + "%"
-                                color: Theme.isDark ? Theme.green : "#15803d"
-                                font.pixelSize: 10
+                                color: Theme.success
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                             }
                         }
                     }
@@ -2652,18 +2732,20 @@ Connections {
                         Layout.fillWidth: true
 
                         Text {
-                            text: "POWER PROFILE"
-                            color: Theme.comment
-                            font.pixelSize: 9
+                            text: "Power profile"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
                         Item { Layout.fillWidth: true }
 
                         Text {
-                            text: BatteryService.activeProfile === "power-saver" ? "Power Saver" : (BatteryService.activeProfile === "performance" ? "Performance" : "Balanced")
-                            color: BatteryService.activeProfile === "power-saver" ? (Theme.isDark ? Theme.green : "#15803d") : (BatteryService.activeProfile === "performance" ? Theme.subAccent : Theme.accent)
-                            font.pixelSize: 10
+                            text: BatteryService.activeProfile === "power-saver" ? "Power saver" : (BatteryService.activeProfile === "performance" ? "Performance" : "Balanced")
+                            color: BatteryService.activeProfile === "power-saver" ? Theme.success : (BatteryService.activeProfile === "performance" ? Theme.subAccent : Theme.accent)
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                     }
@@ -2758,9 +2840,10 @@ Connections {
                         Layout.fillWidth: true
 
                         Text {
-                            text: "Power Saver"
+                            text: "Power saver"
                             color: profileSliderTrack.activeIndex === 0 ? Theme.green : Theme.comment
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: profileSliderTrack.activeIndex === 0 ? Font.Bold : Font.Normal
                         }
 
@@ -2769,7 +2852,8 @@ Connections {
                         Text {
                             text: "Balanced"
                             color: profileSliderTrack.activeIndex === 1 ? Theme.accent : Theme.comment
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: profileSliderTrack.activeIndex === 1 ? Font.Bold : Font.Normal
                         }
 
@@ -2778,7 +2862,8 @@ Connections {
                         Text {
                             text: "Performance"
                             color: profileSliderTrack.activeIndex === 2 ? Theme.subAccent : Theme.comment
-                            font.pixelSize: 9
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: profileSliderTrack.activeIndex === 2 ? Font.Bold : Font.Normal
                         }
                     }
@@ -2812,7 +2897,8 @@ Connections {
                         Text {
                             text: BatteryService.isSleepBlocked ? "Block PC Sleep: ACTIVE" : "Block PC from Falling Asleep"
                             color: BatteryService.isSleepBlocked ? Theme.orange : Theme.fg
-                            font.pixelSize: 10
+                            font.pixelSize: Theme.fsCaption
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
                     }
@@ -2833,7 +2919,7 @@ Connections {
         id: trayContextMenu
         anchor.window: window
         anchor.rect.x: Math.round(Math.max(10, Math.min(window.width - 175, root.x + root.activeTrayX + 12 - 87)))
-        anchor.rect.y: 40
+        anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom | Edges.Left
         visible: false
         color: "transparent"
@@ -2917,7 +3003,8 @@ Connections {
                     Text {
                         text: root.getCleanAppName(root.activeTrayItem)
                         color: Theme.accent
-                        font.pixelSize: 10
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
                         font.weight: Font.Bold
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -2977,7 +3064,8 @@ Connections {
                                 Text {
                                     text: modelData.text ? modelData.text.replace(/&/g, "") : ""
                                     color: modelData.enabled ? Theme.fg : Theme.comment
-                                    font.pixelSize: 10
+                                    font.pixelSize: Theme.fsCaption
+                                    font.family: Theme.fontFamily
                                     font.weight: modelData.enabled ? Font.Medium : Font.Normal
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
@@ -3017,9 +3105,10 @@ Connections {
                             spacing: 6
 
                             Text {
-                                text: "Open / Restore Window"
+                                text: "Open window"
                                 color: Theme.fg
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -3052,9 +3141,10 @@ Connections {
                             spacing: 6
 
                             Text {
-                                text: "Toggle App Menu"
+                                text: "App menu"
                                 color: Theme.fg
-                                font.pixelSize: 10
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -3096,9 +3186,10 @@ Connections {
                             spacing: 6
 
                             Text {
-                                text: "Close Application"
-                                color: quitActMouse.containsMouse ? "#ff5555" : Theme.fg
-                                font.pixelSize: 10
+                                text: "Close application"
+                                color: quitActMouse.containsMouse ? Theme.danger : Theme.fg
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
                                 font.weight: Font.Medium
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
