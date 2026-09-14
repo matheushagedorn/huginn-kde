@@ -89,6 +89,22 @@ removing the panel does not cost you notifications: Plasma serves them from the
 panel applet, and without a replacement no notification from any application
 would arrive at all.
 
+### Weather
+
+**Right-click the weather capsule** to search for a city and pick it. The
+location is otherwise detected by IP on first run and cached for a day, and the
+same panel has an entry to go back to detecting it.
+
+The choice is stored in `~/.config/huginn_weather.json`, which you can also
+write by hand. Giving coordinates skips the lookup entirely:
+
+```json
+{"city": "Home", "latitude": -26.30, "longitude": -48.85}
+```
+
+When nothing can be resolved the panel shows `--°` and says so, rather than
+displaying a plausible temperature it does not have.
+
 ### Brightness on external monitors
 
 Brightness for DDC/CI monitors is written straight to `/dev/i2c-N`. `ddcutil
@@ -148,3 +164,8 @@ hardcoded values, explicit monitor assignment across every window, a working
 dock context menu and drag-to-reorder, auto-hiding dock, indicators that only
 appear when the hardware actually exists, and the removal of the `sudo`
 escalation the original installer triggered in a loop.
+
+Interface icons are [Lucide](https://lucide.dev) (ISC), vendored under
+`quickshell/icons/` so the shell has one icon language instead of borrowing
+from the system icon theme, emoji and font glyphs at the same time. Application
+icons still come from the icon theme, since an app's icon is its identity.

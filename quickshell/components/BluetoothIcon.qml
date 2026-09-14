@@ -1,20 +1,13 @@
 import QtQuick
 import "../theme"
 
-Image {
-    id: root
-
+UiIcon {
     property bool isPowered: true
     property bool isConnected: false
 
-    width: 16
-    height: 16
-    sourceSize.width: Math.round(width)
-    sourceSize.height: Math.round(height)
-    fillMode: Image.PreserveAspectFit
+    implicitWidth: 16
+    implicitHeight: 16
 
-    source: {
-        let base = "file://" + Theme.iconsDir + "/" + Theme.panelIconDir + "/24x24/panel/"
-        return isConnected ? base + "bluetooth-paired.svg" : (isPowered ? base + "bluetooth-active.svg" : base + "bluetooth-disabled.svg")
-    }
+    name: !isPowered ? "bluetooth-off"
+        : isConnected ? "bluetooth-connected" : "bluetooth"
 }

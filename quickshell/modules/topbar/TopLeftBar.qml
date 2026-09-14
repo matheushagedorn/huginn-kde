@@ -10,6 +10,10 @@ GlassPanel {
     implicitWidth: mainLayout.implicitWidth + 24
     implicitHeight: Theme.barHeight - 4
 
+    // Where the row of controls starts inside the panel: the GlassPanel
+    // inset plus the row margin, read from the items themselves.
+    readonly property real contentInset: mainLayout.parent.x + mainLayout.x
+
     RowLayout {
         id: mainLayout
         anchors.fill: parent
@@ -23,18 +27,20 @@ GlassPanel {
             Layout.preferredWidth: 26
             Layout.preferredHeight: Theme.barCapsule
             radius: 6
-            color: sessionMouse.containsMouse ? Theme.currentLine : "transparent"
+            color: PopupService.sessionMenuOpen
+                   ? Theme.stateActive
+                   : (sessionMouse.containsMouse ? Theme.currentLine : "transparent")
+            border.color: PopupService.sessionMenuOpen ? Theme.accent : "transparent"
+            border.width: PopupService.sessionMenuOpen ? 1 : 0
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
-            PowerIcon {
+            UiIcon {
                 anchors.centerIn: parent
+                name: "power"
                 color: sessionMouse.containsMouse ? Theme.accent : Theme.fg
-                implicitWidth: 13
-                implicitHeight: 13
-                strokeWidth: 1.6
-
-                Behavior on color { ColorAnimation { duration: 120 } }
+                implicitWidth: 16
+                implicitHeight: 16
             }
 
             MouseArea {
@@ -162,9 +168,9 @@ GlassPanel {
     PopupWindow {
         id: sessionMenu
         anchor.window: window
-        anchor.rect.x: 8
+        anchor.rect.x: Theme.popupX(root, root.contentInset + sessionBtn.x, sessionBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Left
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -207,8 +213,12 @@ GlassPanel {
 
         GlassPanel {
             id: contentGlass
-            implicitWidth: menuLayout.implicitWidth + 16
-            implicitHeight: menuLayout.implicitHeight + 12
+            // Fixed width: the rows fill it, so nothing in the layout drives
+            // an intrinsic width, and a menu reads better when its items share
+            // one hit area than when it hugs the longest label.
+            implicitWidth: 172
+            // + 8 for the inset GlassPanel puts around its own children.
+            implicitHeight: menuLayout.implicitHeight + Theme.sp2 + 8
             anchors.fill: parent
 
             opacity: sessionMenu.animProgress
@@ -218,167 +228,106 @@ GlassPanel {
             ColumnLayout {
                 id: menuLayout
                 anchors.fill: parent
-                anchors.margins: 4
-                spacing: 2
+                anchors.margins: Theme.sp1
+                spacing: 1
 
-                // Lock Option
-                Rectangle {
+                // The four actions used to be marked by coloured dots — purple,
+                // cyan, blue, red — which looked like a code and was not one.
+                // Only "power off" is destructive, so only it is allowed colour,
+                // and only on hover. Everything else is one quiet family, and
+                // the glyph carries the meaning.
+                //
+                // The rule groups them by what they act on: the session above,
+                // the machine below.
+                component SessionAction: Rectangle {
+                    id: action
+
+                    property string label: ""
+                    property string icon: ""
+                    property bool destructive: false
+                    signal triggered
+
+                    readonly property color tint: destructive && hover.containsMouse
+                                                  ? Theme.danger : Theme.fg
+
                     Layout.fillWidth: true
-                    Layout.preferredWidth: lockRow.implicitWidth + 24
-                    Layout.preferredHeight: 28
-                    color: lockMouse.containsMouse ? Theme.currentLine : "transparent"
-                    radius: 5
+                    Layout.preferredHeight: 30
+                    radius: Theme.radiusChip
+                    color: hover.containsMouse
+                           ? (destructive ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.12)
+                                          : Theme.stateHover)
+                           : "transparent"
 
-                    Behavior on color { ColorAnimation { duration: 100 } }
+                    Behavior on color { ColorAnimation { duration: 110; easing.type: Easing.OutCubic } }
 
                     RowLayout {
-                        id: lockRow
                         anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 12
-                        spacing: 8
+                        anchors.leftMargin: Theme.sp2
+                        anchors.rightMargin: Theme.sp3
+                        spacing: Theme.sp2
 
-                        Rectangle {
-                            width: 6; height: 6; radius: 3
-                            color: Theme.purple
+                        UiIcon {
+                            name: action.icon
+                            color: action.tint
+                            implicitWidth: 15
+                            implicitHeight: 15
                             Layout.alignment: Qt.AlignVCenter
                         }
+
                         Text {
-                            text: "Lock"
-                            color: Theme.fg
+                            text: action.label
+                            color: action.tint
                             font.pixelSize: Theme.fsBody
                             font.family: Theme.fontFamily
                             font.weight: Font.Medium
                             Layout.alignment: Qt.AlignVCenter
+                            Layout.fillWidth: true
                         }
                     }
 
                     MouseArea {
-                        id: lockMouse
+                        id: hover
                         anchors.fill: parent
                         hoverEnabled: true
-                        onClicked: { SessionService.lock(); PopupService.closeAll() }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            action.triggered()
+                            PopupService.closeAll()
+                        }
                     }
                 }
 
-                // Log Out Option
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: logoutRow.implicitWidth + 24
-                    Layout.preferredHeight: 28
-                    color: logoutMouse.containsMouse ? Theme.currentLine : "transparent"
-                    radius: 5
-
-                    Behavior on color { ColorAnimation { duration: 100 } }
-
-                    RowLayout {
-                        id: logoutRow
-                        anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 12
-                        spacing: 8
-
-                        Rectangle {
-                            width: 6; height: 6; radius: 3
-                            color: Theme.cyan
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                        Text {
-                            text: "Log out"
-                            color: Theme.fg
-                            font.pixelSize: Theme.fsBody
-                            font.family: Theme.fontFamily
-                            font.weight: Font.Medium
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                    }
-
-                    MouseArea {
-                        id: logoutMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: { SessionService.logout(); PopupService.closeAll() }
-                    }
+                SessionAction {
+                    label: "Lock"
+                    icon: "lock"
+                    onTriggered: SessionService.lock()
                 }
 
-                // Reboot Option
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredWidth: rebootRow.implicitWidth + 24
-                    Layout.preferredHeight: 28
-                    color: rebootMouse.containsMouse ? Theme.currentLine : "transparent"
-                    radius: 5
-
-                    Behavior on color { ColorAnimation { duration: 100 } }
-
-                    RowLayout {
-                        id: rebootRow
-                        anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 12
-                        spacing: 8
-
-                        Rectangle {
-                            width: 6; height: 6; radius: 3
-                            color: Theme.accent
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                        Text {
-                            text: "Reboot"
-                            color: Theme.fg
-                            font.pixelSize: Theme.fsBody
-                            font.family: Theme.fontFamily
-                            font.weight: Font.Medium
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                    }
-
-                    MouseArea {
-                        id: rebootMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: { SessionService.reboot(); PopupService.closeAll() }
-                    }
+                SessionAction {
+                    label: "Log out"
+                    icon: "log-out"
+                    onTriggered: SessionService.logout()
                 }
 
-                // Shutdown Option
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredWidth: shutdownRow.implicitWidth + 24
-                    Layout.preferredHeight: 28
-                    color: shutdownMouse.containsMouse ? Theme.currentLine : "transparent"
-                    radius: 5
+                    Layout.topMargin: Theme.sp1
+                    Layout.bottomMargin: Theme.sp1
+                    Layout.preferredHeight: 1
+                    color: Theme.separator
+                }
 
-                    Behavior on color { ColorAnimation { duration: 100 } }
+                SessionAction {
+                    label: "Restart"
+                    icon: "rotate-ccw"
+                    onTriggered: SessionService.reboot()
+                }
 
-                    RowLayout {
-                        id: shutdownRow
-                        anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 12
-                        spacing: 8
-
-                        Rectangle {
-                            width: 6; height: 6; radius: 3
-                            color: Theme.red
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                        Text {
-                            text: "Power off"
-                            color: Theme.red
-                            font.pixelSize: Theme.fsBody
-                            font.family: Theme.fontFamily
-                            font.weight: Font.Medium
-                            Layout.alignment: Qt.AlignVCenter
-                        }
-                    }
-
-                    MouseArea {
-                        id: shutdownMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: { SessionService.shutdown(); PopupService.closeAll() }
-                    }
+                SessionAction {
+                    label: "Shut down"
+                    icon: "power"
+                    destructive: true
+                    onTriggered: SessionService.shutdown()
                 }
             }
         }
@@ -398,7 +347,7 @@ GlassPanel {
     PopupWindow {
         id: wsPreviewPopup
         anchor.window: window
-        anchor.rect.x: Math.max(10, root.hoverWsIndex * 32 + 10)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + root.hoverWsIndex * 32, 32, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: root.isWsHovered && root.hoverWsIndex >= 1

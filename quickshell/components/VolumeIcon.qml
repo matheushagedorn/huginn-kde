@@ -1,28 +1,14 @@
 import QtQuick
 import "../theme"
 
-Image {
-    id: icon
+// Volume level. Three steps plus muted, drawn from the shared Lucide set.
+UiIcon {
     property int volume: 100
     property bool isMuted: false
 
-    width: 16
-    height: 16
-    // Rasterise at the size actually rendered, not a fixed 16.
-    sourceSize.width: Math.round(width)
-    sourceSize.height: Math.round(height)
-    fillMode: Image.PreserveAspectFit
+    implicitWidth: 16
+    implicitHeight: 16
 
-    source: {
-        let base = "file://" + Theme.iconsDir + "/" + Theme.panelIconDir + "/24x24/panel/"
-        if (isMuted || volume === 0) {
-            return base + "audio-volume-muted-panel.svg"
-        } else if (volume > 66) {
-            return base + "audio-volume-high-panel.svg"
-        } else if (volume > 33) {
-            return base + "audio-volume-medium-panel.svg"
-        } else {
-            return base + "audio-volume-low-panel.svg"
-        }
-    }
+    name: (isMuted || volume === 0) ? "volume-x"
+        : volume > 50 ? "volume-2" : "volume-1"
 }

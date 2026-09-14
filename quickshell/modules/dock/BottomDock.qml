@@ -76,14 +76,12 @@ Item {
                         NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
                     }
 
-                    Text {
+                    UiIcon {
                         anchors.centerIn: parent
-                        text: "▦"
-                        font.pixelSize: Theme.fsTitle
-                        font.bold: true
+                        name: "layout-grid"
                         color: Theme.fg
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                        implicitWidth: 15
+                        implicitHeight: 15
                     }
                 }
 

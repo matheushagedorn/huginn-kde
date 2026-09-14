@@ -258,11 +258,12 @@ PanelWindow {
 
                                 Behavior on color { ColorAnimation { duration: 100 } }
 
-                                Text {
+                                UiIcon {
                                     anchors.centerIn: parent
-                                    text: "✕"
+                                    name: "x"
                                     color: Theme.textMuted
-                                    font.pixelSize: Theme.fsBody
+                                    implicitWidth: 15
+                                    implicitHeight: 15
                                 }
 
                                 MouseArea {
@@ -315,7 +316,11 @@ PanelWindow {
                         anchors.rightMargin: 16
                         spacing: 12
 
-                        Text { text: "🧮"; font.pixelSize: 18 }
+                        UiIcon {
+                            name: "calculator"
+                            implicitWidth: 15
+                            implicitHeight: 15
+                        }
 
                         ColumnLayout {
                             Layout.fillWidth: true

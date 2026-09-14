@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 import "../../components"
 import "../../services"
 import "../../theme"
@@ -9,6 +10,10 @@ GlassPanel {
     id: root
     implicitWidth: mainLayout.implicitWidth + 24
     implicitHeight: Theme.barHeight - 4
+
+    // Where the row of controls starts inside the panel: the GlassPanel
+    // inset plus the row margin, read from the items themselves.
+    readonly property real contentInset: mainLayout.parent.x + mainLayout.x
 
     RowLayout {
         id: mainLayout
@@ -23,7 +28,9 @@ GlassPanel {
             Layout.preferredWidth: weatherRow.implicitWidth + 14
             Layout.preferredHeight: Theme.barCapsule
             radius: 7
-            color: weatherMouse.containsMouse ? Theme.currentLine : "transparent"
+            color: PopupService.weatherMenuOpen
+                   ? Theme.stateActive
+                   : (weatherMouse.containsMouse ? Theme.currentLine : "transparent")
             border.color: weatherMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : "transparent"
             border.width: 1
 
@@ -35,9 +42,11 @@ GlassPanel {
                 anchors.centerIn: parent
                 spacing: 5
 
-                Text {
-                    text: WeatherService.getWeatherIcon(WeatherService.weatherCode)
-                    font.pixelSize: Theme.fsStrong
+                UiIcon {
+                    name: WeatherService.getWeatherIcon(WeatherService.weatherCode)
+                    color: Theme.fg
+                    implicitWidth: 26
+                    implicitHeight: 26
                 }
 
                 Text {
@@ -52,7 +61,14 @@ GlassPanel {
                 id: weatherMouse
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: PopupService.toggleWeather()
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: mouse => {
+                    if (mouse.button === Qt.RightButton) {
+                        PopupService.toggleWeatherPicker()
+                    } else {
+                        PopupService.toggleWeather()
+                    }
+                }
             }
         }
 
@@ -69,7 +85,9 @@ GlassPanel {
             Layout.preferredWidth: timeRow.implicitWidth + 18
             Layout.preferredHeight: Theme.barCapsule
             radius: 8
-            color: timeMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.20) : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10)
+            color: PopupService.calendarMenuOpen
+                   ? Theme.stateActive
+                   : (timeMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.20) : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.10))
             border.color: timeMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.65) : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.24)
             border.width: 1
 
@@ -134,7 +152,9 @@ GlassPanel {
             Layout.preferredWidth: mediaRow.implicitWidth + 14
             Layout.preferredHeight: Theme.barCapsule
             radius: 7
-            color: mediaMouse.containsMouse ? Theme.currentLine : "transparent"
+            color: PopupService.mediaMenuOpen
+                   ? Theme.stateActive
+                   : (mediaMouse.containsMouse ? Theme.currentLine : "transparent")
             border.color: mediaMouse.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : "transparent"
             border.width: 1
 
@@ -202,7 +222,7 @@ GlassPanel {
     PopupWindow {
         id: timeMenu
         anchor.window: window
-        anchor.rect.x: root.x + (root.width / 2) - (implicitWidth / 2)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + timeBtn.x, timeBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: false
@@ -266,7 +286,7 @@ GlassPanel {
     PopupWindow {
         id: mediaMenu
         anchor.window: window
-        anchor.rect.x: root.x + (root.width / 2) - (implicitWidth / 2)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + mediaBtn.x, mediaBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: false
@@ -690,9 +710,9 @@ GlassPanel {
     PopupWindow {
         id: weatherPopup
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + weatherBtn.x)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + weatherBtn.x, weatherBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Left
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -754,9 +774,11 @@ GlassPanel {
                     Layout.fillWidth: true
                     spacing: 8
 
-                    Text {
-                        text: WeatherService.getWeatherIcon(WeatherService.weatherCode)
-                        font.pixelSize: Theme.fsDisplay
+                    UiIcon {
+                        name: WeatherService.getWeatherIcon(WeatherService.weatherCode)
+                        color: Theme.fg
+                        implicitWidth: 26
+                        implicitHeight: 26
                     }
 
                     ColumnLayout {
@@ -764,22 +786,31 @@ GlassPanel {
                         spacing: 2
 
                         Text {
-                            text: WeatherService.city
+                            text: WeatherService.available ? WeatherService.city
+                                                          : "Weather unavailable"
                             color: Theme.fg
                             font.pixelSize: Theme.fsSubhead
+                            font.family: Theme.fontFamily
                             font.weight: Font.Bold
                         }
 
                         Text {
-                            text: WeatherService.condition + " • " + WeatherService.currentTempStr
+                            // An empty panel tells you nothing. Say what to do
+                            // about it instead of showing a dash and a dot.
+                            text: WeatherService.available
+                                  ? WeatherService.condition + " • " + WeatherService.currentTempStr
+                                  : "Set your city in\n~/.config/huginn_weather.json"
                             color: Theme.textMuted
                             font.pixelSize: Theme.fsBody
                             font.family: Theme.fontFamily
+                            wrapMode: Text.Wrap
+                            Layout.fillWidth: true
                         }
                     }
                 }
 
                 Rectangle {
+                    visible: WeatherService.available
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
                     color: Theme.currentLine
@@ -814,10 +845,11 @@ GlassPanel {
                                     Layout.alignment: Qt.AlignHCenter
                                 }
 
-                                Text {
-                                    text: modelData.icon
-                                    font.pixelSize: Theme.fsSubhead
-                                    font.family: Theme.fontFamily
+                                UiIcon {
+                                    name: modelData.icon
+                                    color: Theme.textMuted
+                                    implicitWidth: 17
+                                    implicitHeight: 17
                                     Layout.alignment: Qt.AlignHCenter
                                 }
 
@@ -829,6 +861,248 @@ GlassPanel {
                                     Layout.alignment: Qt.AlignHCenter
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // City picker, on right-click of the weather capsule.
+    //
+    // A PanelWindow rather than a PopupWindow: keyboardFocus is a property of
+    // the layer surface, and a popup is a child surface, so a text field inside
+    // one never receives a keystroke. This is the same shape the app launcher
+    // uses, which is the one that works.
+    PanelWindow {
+        id: weatherPicker
+        screen: window.screen
+        anchors { top: true; bottom: true; left: true; right: true }
+        exclusionMode: ExclusionMode.Ignore
+        color: "transparent"
+
+        WlrLayershell.layer: WlrLayershell.Overlay
+        WlrLayershell.keyboardFocus: WlrLayershell.Exclusive
+
+        visible: PopupService.weatherPickerOpen
+
+        onVisibleChanged: {
+            if (visible) {
+                cityField.text = ""
+                WeatherService.searchResults = []
+                cityField.forceActiveFocus()
+            }
+        }
+
+        // Anywhere outside the card dismisses it.
+        MouseArea {
+            anchors.fill: parent
+            onClicked: PopupService.closeAll()
+        }
+
+        GlassPanel {
+            id: pickerGlass
+            // Lines up under the weather capsule: the bar window is inset by
+            // 10px, and the popups below the bar sit at Theme.popupGap.
+            x: 10 + Theme.popupX(root, root.contentInset + weatherBtn.x, weatherBtn.width, width, window.width, root.contentInset)
+            y: 10 + Theme.popupGap
+            width: 300
+            // Content height, plus this layout's own margins, plus the 4px
+            // inset GlassPanel puts around its children on every side. Leaving
+            // that inset out is what was cropping the last row: the content
+            // asked for 78px and was handed 70.
+            readonly property int chrome: Theme.sp3 * 2 + 8
+            height: pickerCol.implicitHeight + chrome
+
+            // Clicks on the card must not reach the dismiss area behind it.
+            MouseArea { anchors.fill: parent }
+
+            ColumnLayout {
+                id: pickerCol
+                anchors.fill: parent
+                anchors.margins: Theme.sp3
+                spacing: Theme.sp2
+                clip: true
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 1
+
+                    Text {
+                        text: "Location"
+                        color: Theme.fg
+                        font.pixelSize: Theme.fsStrong
+                        font.family: Theme.fontFamily
+                        font.weight: Font.Bold
+                    }
+
+                    Text {
+                        // States where the reading comes from without looking
+                        // like a control. The first version put "Auto" in the
+                        // corner, which read as a button and did nothing.
+                        text: WeatherService.pinnedCity !== ""
+                              ? "Pinned to " + WeatherService.pinnedCity
+                              : (WeatherService.city !== ""
+                                 ? "Detected as " + WeatherService.city
+                                 : "Detecting…")
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
+                        elide: Text.ElideRight
+                        Layout.fillWidth: true
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 32
+                    radius: Theme.radiusChip
+                    color: Theme.stateHover
+                    border.color: cityField.activeFocus ? Theme.stateFocus : Theme.separator
+                    border.width: 1
+
+                    Behavior on border.color { ColorAnimation { duration: 120 } }
+
+                    TextInput {
+                        id: cityField
+                        anchors.fill: parent
+                        anchors.leftMargin: Theme.sp2
+                        anchors.rightMargin: Theme.sp2
+                        verticalAlignment: Text.AlignVCenter
+                        color: Theme.fg
+                        font.pixelSize: Theme.fsBody
+                        font.family: Theme.fontFamily
+                        selectionColor: Theme.stateActive
+                        selectedTextColor: Theme.fg
+                        selectByMouse: true
+                        clip: true
+                        focus: true
+
+                        Text {
+                            anchors.fill: parent
+                            verticalAlignment: Text.AlignVCenter
+                            text: "Type a city name"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
+                            visible: !cityField.text
+                        }
+
+                        onTextChanged: WeatherService.searchCity(text)
+                        Keys.onEscapePressed: PopupService.closeAll()
+                    }
+                }
+
+                // An empty list should never be silently empty.
+                Text {
+                    visible: text !== ""
+                    text: WeatherService.searching
+                          ? "Searching…"
+                          : (cityField.text.length >= 2 && WeatherService.searchError !== ""
+                             ? WeatherService.searchError : "")
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fsCaption
+                    font.family: Theme.fontFamily
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    visible: WeatherService.searchResults.length > 0
+
+                    Repeater {
+                        model: WeatherService.searchResults
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 38
+                            radius: Theme.radiusChip
+                            color: hitMouse.containsMouse ? Theme.stateHover : "transparent"
+
+                            Behavior on color { ColorAnimation { duration: 100 } }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: Theme.sp2
+                                anchors.rightMargin: Theme.sp2
+                                spacing: 0
+
+                                Text {
+                                    text: modelData.name
+                                    color: Theme.fg
+                                    font.pixelSize: Theme.fsBody
+                                    font.family: Theme.fontFamily
+                                    font.weight: Font.Medium
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+
+                                Text {
+                                    text: modelData.region
+                                    color: Theme.textMuted
+                                    font.pixelSize: Theme.fsCaption
+                                    font.family: Theme.fontFamily
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            MouseArea {
+                                id: hitMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    WeatherService.applyCity(modelData.name,
+                                                             modelData.latitude,
+                                                             modelData.longitude,
+                                                             modelData.region)
+                                    PopupService.closeAll()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // No fillHeight spacer here: the card sizes itself from this
+                // layout while the layout fills the card, and an item that
+                // absorbs leftover space makes that circular. The footer was
+                // left hanging over the bottom edge.
+                Rectangle {
+                    visible: WeatherService.pinnedCity !== ""
+                    Layout.fillWidth: true
+                    Layout.topMargin: Theme.sp1
+                    Layout.preferredHeight: 1
+                    color: Theme.separator
+                }
+
+                Rectangle {
+                    visible: WeatherService.pinnedCity !== ""
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 30
+                    radius: Theme.radiusChip
+                    color: autoMouse.containsMouse ? Theme.stateHover : "transparent"
+                    border.color: autoMouse.containsMouse ? Theme.separator : "transparent"
+                    border.width: 1
+
+                    Behavior on color { ColorAnimation { duration: 100 } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "Detect my location again"
+                        color: Theme.textMuted
+                        font.pixelSize: Theme.fsCaption
+                        font.family: Theme.fontFamily
+                    }
+
+                    MouseArea {
+                        id: autoMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            WeatherService.useAutoLocation()
+                            PopupService.closeAll()
                         }
                     }
                 }

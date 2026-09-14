@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import "../../theme"
+import "../../components"
 import "../../services"
 
 Item {
@@ -152,7 +153,7 @@ Item {
                 Text { text: "•"; color: Theme.accent; font.pixelSize: Theme.fsSubhead }
 
                 Text {
-                    text: WeatherService.getWeatherIcon(WeatherService.weatherCode) + " " + WeatherService.currentTempStr
+                    text: WeatherService.currentTempStr
                     color: Theme.textMuted
                     font.pixelSize: Theme.fsHead
                     font.weight: Font.Medium
@@ -453,12 +454,12 @@ Item {
 
                             Behavior on color { ColorAnimation { duration: 120 } }
 
-                            Text {
+                            UiIcon {
                                 anchors.centerIn: parent
-                                text: "➔"
+                                name: "arrow-right"
                                 color: Theme.accentFg
-                                font.pixelSize: Theme.fsSubhead
-                                font.weight: Font.Bold
+                                implicitWidth: 15
+                                implicitHeight: 15
                             }
 
                             MouseArea {
@@ -517,7 +518,7 @@ Item {
                             RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
-                                Text { text: "󰒲"; font.pixelSize: Theme.fsHead; font.family: Theme.fontIcon; color: Theme.accent }
+                                UiIcon { name: "moon"; color: Theme.fg; implicitWidth: 18; implicitHeight: 18 }
                                 Text { text: "Sleep"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; font.weight: Font.SemiBold; font.family: Theme.fontFamily }
                             }
 
@@ -546,7 +547,7 @@ Item {
                             RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
-                                Text { text: "󰜉"; font.pixelSize: Theme.fsHead; font.family: Theme.fontIcon; color: Theme.orange }
+                                UiIcon { name: "rotate-ccw"; color: Theme.fg; implicitWidth: 18; implicitHeight: 18 }
                                 Text { text: "Restart"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; font.weight: Font.SemiBold; font.family: Theme.fontFamily }
                             }
 
@@ -575,7 +576,7 @@ Item {
                             RowLayout {
                                 anchors.centerIn: parent
                                 spacing: 8
-                                Text { text: "󰐥"; font.pixelSize: Theme.fsHead; font.family: Theme.fontIcon; color: Theme.red }
+                                UiIcon { name: "power"; color: Theme.danger; implicitWidth: 18; implicitHeight: 18 }
                                 Text { text: "Power Off"; color: Theme.fg; font.pixelSize: Theme.fsSubhead; font.weight: Font.SemiBold; font.family: Theme.fontFamily }
                             }
 

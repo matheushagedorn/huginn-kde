@@ -33,6 +33,7 @@ Scope {
         function brightness() { PopupService.toggleBrightness() }
         function calendar() { PopupService.toggleCalendar() }
         function weather() { PopupService.toggleWeather() }
+        function weatherpicker() { PopupService.toggleWeatherPicker() }
         function session() { PopupService.toggleSession() }
         function notifications() { PopupService.toggleNotification() }
         function close() { PopupService.closeAll() }
@@ -114,6 +115,7 @@ Scope {
         // Reserves real screen space: since the bar is always visible, a
         // maximized window should start below it, not hidden underneath.
         WlrLayershell.layer: WlrLayershell.Top
+
         implicitHeight: Theme.barHeight
         color: "transparent"
 

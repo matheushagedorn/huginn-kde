@@ -361,6 +361,9 @@ Restart=always
 RestartSec=3
 Environment=QT_QPA_PLATFORM=wayland
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h/.local/bin
+# Holds the unit in "activating" until the shell actually answers, so anything
+# ordered after it starts against a screen the bar has already claimed.
+ExecStartPost=/usr/bin/bash -c 'n=0; while [ \$n -lt 60 ]; do ${qs_bin} ipc show >/dev/null 2>&1 && exit 0; sleep 0.1; n=\$((n+1)); done; exit 0'
 
 [Install]
 WantedBy=graphical-session.target
@@ -387,6 +390,30 @@ Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h
 [Install]
 WantedBy=graphical-session.target
 EOF
+
+    # Session restore has to wait for the bar to exist.
+    #
+    # KWin restores last session's windows about 350ms before the shell finishes
+    # loading, so the windows are placed against the full screen and end up
+    # under the top bar. A non-maximized window is never re-placed afterwards,
+    # so they stay there until you resize them by hand.
+    #
+    # ExecStartPost above holds the unit in "activating" until the shell answers
+    # on IPC, and these drop-ins order the restore after it. The probe gives up
+    # after six seconds so a broken shell can never hold the session hostage.
+    local restore_units=(
+        "plasma-restoresession.service"
+        'app-org.kde.plasma\x2dfallback\x2dsession\x2drestore@autostart.service'
+    )
+    local restore_unit
+    for restore_unit in "${restore_units[@]}"; do
+        mkdir -p "$service_dir/${restore_unit}.d"
+        cat > "$service_dir/${restore_unit}.d/wait-for-huginn.conf" <<EOF
+[Unit]
+After=huginn.service
+Wants=huginn.service
+EOF
+    done
 
     systemctl --user daemon-reload
     for unit in huginn.service huginn-recolor-watcher.service; do

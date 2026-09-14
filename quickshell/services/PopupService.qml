@@ -7,6 +7,7 @@ Item {
     property bool sessionMenuOpen: false
     property bool calendarMenuOpen: false
     property bool weatherMenuOpen: false
+    property bool weatherPickerOpen: false
     property bool mediaMenuOpen: false
     property bool notificationMenuOpen: false
     property bool captureMenuOpen: false
@@ -25,12 +26,13 @@ Item {
     property bool previewOpen: false
     property bool contextMenuOpen: false
 
-    property bool anyOpen: sessionMenuOpen || calendarMenuOpen || weatherMenuOpen || mediaMenuOpen || notificationMenuOpen || captureMenuOpen || clipboardMenuOpen || audioMenuOpen || bluetoothMenuOpen || brightnessMenuOpen || mountMenuOpen || networkMenuOpen || batteryMenuOpen || trayMenuOpen || dockMenuOpen || appLauncherOpen || themePickerOpen || wallpaperPickerOpen || contextMenuOpen
+    property bool anyOpen: sessionMenuOpen || calendarMenuOpen || weatherMenuOpen || weatherPickerOpen || mediaMenuOpen || notificationMenuOpen || captureMenuOpen || clipboardMenuOpen || audioMenuOpen || bluetoothMenuOpen || brightnessMenuOpen || mountMenuOpen || networkMenuOpen || batteryMenuOpen || trayMenuOpen || dockMenuOpen || appLauncherOpen || themePickerOpen || wallpaperPickerOpen || contextMenuOpen
 
     function closeAll() {
         sessionMenuOpen = false
         calendarMenuOpen = false
         weatherMenuOpen = false
+        weatherPickerOpen = false
         mediaMenuOpen = false
         notificationMenuOpen = false
         captureMenuOpen = false
@@ -78,6 +80,12 @@ Item {
         let state = !weatherMenuOpen
         closeAll()
         weatherMenuOpen = state
+    }
+
+    function toggleWeatherPicker() {
+        let state = !weatherPickerOpen
+        closeAll()
+        weatherPickerOpen = state
     }
 
     function toggleMedia() {

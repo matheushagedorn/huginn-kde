@@ -1,54 +1,26 @@
 import QtQuick
 import "../theme"
 
-Canvas {
-    id: root
-    implicitWidth: 20
-    implicitHeight: 20
-
+// Sky condition, mapped from the WMO weather code Open-Meteo returns.
+UiIcon {
     property int weatherCode: 0
     property bool isDay: true
-    property color color: Theme.warning
 
-    onWeatherCodeChanged: requestPaint()
-    onIsDayChanged: requestPaint()
-    onColorChanged: requestPaint()
+    implicitWidth: 16
+    implicitHeight: 16
 
-    onPaint: {
-        var ctx = getContext("2d");
-        ctx.reset();
-        var w = width;
-        var h = height;
-
-        ctx.strokeStyle = root.color;
-        ctx.fillStyle = root.color;
-        ctx.lineWidth = 1.5;
-
-        if (weatherCode === 0 && isDay) {
-            // Sun
-            ctx.beginPath();
-            ctx.arc(w/2, h/2, w*0.24, 0, Math.PI*2);
-            ctx.stroke();
-            ctx.fill();
-            for (var i = 0; i < 8; i++) {
-                var angle = (i * Math.PI) / 4;
-                var x1 = w/2 + Math.cos(angle) * (w*0.32);
-                var y1 = h/2 + Math.sin(angle) * (h*0.32);
-                var x2 = w/2 + Math.cos(angle) * (w*0.42);
-                var y2 = h/2 + Math.sin(angle) * (h*0.42);
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-            }
-        } else {
-            // Minimal Cloud
-            ctx.fillStyle = Theme.isDark ? Theme.cyan : Theme.accent;
-            ctx.beginPath();
-            ctx.arc(w*0.35, h*0.55, w*0.18, 0, Math.PI*2);
-            ctx.arc(w*0.55, h*0.45, w*0.22, 0, Math.PI*2);
-            ctx.arc(w*0.72, h*0.58, w*0.15, 0, Math.PI*2);
-            ctx.fill();
-        }
+    name: {
+        let c = weatherCode
+        if (c === 0) return isDay ? "sun" : "moon"
+        if (c <= 3) return isDay ? "cloud-sun" : "cloudy"
+        if (c === 45 || c === 48) return "cloud-fog"
+        if (c >= 51 && c <= 55) return "cloud-drizzle"
+        if (c >= 61 && c <= 65) return "cloud-rain"
+        if (c >= 71 && c <= 75) return "cloud-snow"
+        if (c >= 80 && c <= 82) return "cloud-rain"
+        if (c >= 95) return "cloud-lightning"
+        return "cloud"
     }
+
+    color: Theme.fg
 }

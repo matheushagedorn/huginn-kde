@@ -1,33 +1,19 @@
 import QtQuick
 import "../theme"
 
-Image {
-    id: icon
+// Ethernet and Wi-Fi share one slot; the glyph says which link is in use and,
+// for Wi-Fi, how strong it is.
+UiIcon {
     property bool isConnected: true
     property int signalPercent: 100
     property bool isEthernet: false
     property bool isWifiPowered: true
 
-    width: 16
-    height: 16
-    sourceSize.width: Math.round(width)
-    sourceSize.height: Math.round(height)
-    fillMode: Image.PreserveAspectFit
+    implicitWidth: 16
+    implicitHeight: 16
 
-    source: {
-        let base = "file://" + Theme.iconsDir + "/" + Theme.panelIconDir + "/24x24/panel/"
-        if (isEthernet) {
-            return isConnected ? base + "network-wired-activated.svg" : base + "network-wired-disconnected.svg"
-        } else if (!isWifiPowered || !isConnected) {
-            return base + "network-wireless-off.svg"
-        } else if (signalPercent > 75) {
-            return base + "network-wireless-100.svg"
-        } else if (signalPercent > 50) {
-            return base + "network-wireless-60.svg"
-        } else if (signalPercent > 25) {
-            return base + "network-wireless-40.svg"
-        } else {
-            return base + "network-wireless-20.svg"
-        }
-    }
+    name: isEthernet ? (isConnected ? "ethernet-port" : "cable")
+        : (!isWifiPowered || !isConnected) ? "wifi-off"
+        : signalPercent > 66 ? "wifi"
+        : signalPercent > 33 ? "signal-medium" : "signal-low"
 }

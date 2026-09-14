@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 import "../../theme"
+import "../../components"
 import "../../services"
 
 PanelWindow {
@@ -78,10 +79,11 @@ PanelWindow {
                     border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.45)
                     border.width: 1
 
-                    Text {
+                    UiIcon {
                         anchors.centerIn: parent
-                        text: "🔔"
-                        font.pixelSize: Theme.fsStrong
+                        name: "bell"
+                        implicitWidth: 15
+                        implicitHeight: 15
                     }
                 }
 
@@ -111,12 +113,12 @@ PanelWindow {
 
                     Behavior on color { ColorAnimation { duration: 100 } }
 
-                    Text {
+                    UiIcon {
                         anchors.centerIn: parent
-                        text: "✕"
+                        name: "x"
                         color: closeMouse.containsMouse ? Theme.fg : Theme.textMuted
-                        font.pixelSize: Theme.fsCaption
-                        font.weight: Font.Bold
+                        implicitWidth: 15
+                        implicitHeight: 15
                     }
 
                     MouseArea {

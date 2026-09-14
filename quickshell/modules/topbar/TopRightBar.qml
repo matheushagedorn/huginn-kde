@@ -44,6 +44,10 @@ GlassPanel {
         return result || "Application"
     }
 
+    // Where the row of controls starts inside the panel: the GlassPanel
+    // inset plus the row margin, read from the items themselves.
+    readonly property real contentInset: mainLayout.parent.x + mainLayout.x
+
     RowLayout {
         id: mainLayout
         anchors.fill: parent
@@ -167,14 +171,11 @@ GlassPanel {
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
-            Image {
+            UiIcon {
                 anchors.centerIn: parent
-                width: 16
-                height: 16
-                sourceSize.width: 16
-                sourceSize.height: 16
-                fillMode: Image.PreserveAspectFit
-                source: "file://" + Theme.iconsDir + "/" + Theme.panelIconDir + "/24x24/panel/record-desktop-indicator.svg"
+                name: "camera"
+                implicitWidth: 16
+                implicitHeight: 16
             }
 
             MouseArea {
@@ -197,14 +198,11 @@ GlassPanel {
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
-            Image {
+            UiIcon {
                 anchors.centerIn: parent
-                width: 16
-                height: 16
-                sourceSize.width: 16
-                sourceSize.height: 16
-                fillMode: Image.PreserveAspectFit
-                source: "file://" + Theme.iconsDir + "/" + Theme.panelIconDir + "/24x24/panel/clipboard.svg"
+                name: "clipboard-list"
+                implicitWidth: 16
+                implicitHeight: 16
             }
 
             MouseArea {
@@ -262,7 +260,11 @@ GlassPanel {
             Layout.preferredWidth: visible ? 26 : 0
             Layout.preferredHeight: Theme.barCapsule
             radius: 6
-            color: btMouse.containsMouse ? Theme.currentLine : "transparent"
+            color: PopupService.bluetoothMenuOpen
+                   ? Theme.stateActive
+                   : (btMouse.containsMouse ? Theme.currentLine : "transparent")
+            border.color: PopupService.bluetoothMenuOpen ? Theme.accent : "transparent"
+            border.width: PopupService.bluetoothMenuOpen ? 1 : 0
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -291,7 +293,11 @@ GlassPanel {
             Layout.preferredWidth: 26
             Layout.preferredHeight: Theme.barCapsule
             radius: 6
-            color: brightMouse.containsMouse ? Theme.currentLine : "transparent"
+            color: PopupService.brightnessMenuOpen
+                   ? Theme.stateActive
+                   : (brightMouse.containsMouse ? Theme.currentLine : "transparent")
+            border.color: PopupService.brightnessMenuOpen ? Theme.accent : "transparent"
+            border.width: PopupService.brightnessMenuOpen ? 1 : 0
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -328,18 +334,19 @@ GlassPanel {
             Layout.preferredWidth: 26
             Layout.preferredHeight: Theme.barCapsule
             radius: 6
-            color: mountMouse.containsMouse ? Theme.currentLine : "transparent"
+            color: PopupService.mountMenuOpen
+                   ? Theme.stateActive
+                   : (mountMouse.containsMouse ? Theme.currentLine : "transparent")
+            border.color: PopupService.mountMenuOpen ? Theme.accent : "transparent"
+            border.width: PopupService.mountMenuOpen ? 1 : 0
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
-            Image {
+            UiIcon {
                 anchors.centerIn: parent
-                width: 16
-                height: 16
-                sourceSize.width: 16
-                sourceSize.height: 16
-                fillMode: Image.PreserveAspectFit
-                source: "file://" + Theme.iconsDir + "/" + Theme.panelIconDir + "/24x24/panel/drive-removable-media-usb-panel.svg"
+                name: "hard-drive"
+                implicitWidth: 16
+                implicitHeight: 16
             }
 
             MouseArea {
@@ -359,7 +366,11 @@ GlassPanel {
             Layout.preferredWidth: 26
             Layout.preferredHeight: Theme.barCapsule
             radius: 6
-            color: netMouse.containsMouse ? Theme.currentLine : "transparent"
+            color: PopupService.networkMenuOpen
+                   ? Theme.stateActive
+                   : (netMouse.containsMouse ? Theme.currentLine : "transparent")
+            border.color: PopupService.networkMenuOpen ? Theme.accent : "transparent"
+            border.width: PopupService.networkMenuOpen ? 1 : 0
 
             Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -391,9 +402,9 @@ GlassPanel {
     PopupWindow {
         id: captureMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + captureBtn.x, captureBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -496,7 +507,11 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "✂️"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            UiIcon {
+                                name: "scissors"
+                                implicitWidth: 15
+                                implicitHeight: 15
+                            }
                             Text { text: "Selected region"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
                             Text { text: "Super+Shift+S"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
@@ -527,7 +542,11 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "🖥️"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            UiIcon {
+                                name: "monitor"
+                                implicitWidth: 15
+                                implicitHeight: 15
+                            }
                             Text { text: "Whole screen"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
                             Text { text: "PrintScreen"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
@@ -558,7 +577,11 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "🪟"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            UiIcon {
+                                name: "layout-grid"
+                                implicitWidth: 15
+                                implicitHeight: 15
+                            }
                             Text { text: "Active window"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
                             Text { text: "Super+Print"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
@@ -610,7 +633,11 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "🎥"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            UiIcon {
+                                name: "video"
+                                implicitWidth: 15
+                                implicitHeight: 15
+                            }
                             Text { text: "Selected region"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
                             Text { text: "Super+Alt+R"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
@@ -641,7 +668,11 @@ GlassPanel {
                             anchors.rightMargin: 10
                             spacing: 8
 
-                            Text { text: "📽️"; font.pixelSize: Theme.fsBody; Layout.alignment: Qt.AlignVCenter }
+                            UiIcon {
+                                name: "cast"
+                                implicitWidth: 15
+                                implicitHeight: 15
+                            }
                             Text { text: "Whole screen"; color: Theme.fg; font.pixelSize: Theme.fsCaption; font.weight: Font.Medium; Layout.fillWidth: true }
                             Text { text: "Super+Alt+F"; color: Theme.textMuted; font.pixelSize: Theme.fsCaption }
                         }
@@ -700,7 +731,7 @@ GlassPanel {
     PopupWindow {
         id: notifMenu
         anchor.window: window
-        anchor.rect.x: root.x + (root.width / 2) - (implicitWidth / 2)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + notifBtn.x, notifBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
         anchor.edges: Edges.Bottom
         visible: false
@@ -932,15 +963,17 @@ GlassPanel {
                                             font.family: Theme.fontFamily
                                         }
 
-                                        Text {
-                                            text: "✕"
-                                            color: delNotifMouse.containsMouse ? Theme.red : Theme.comment
-                                            font.pixelSize: Theme.fsCaption
-                                            font.family: Theme.fontFamily
+                                        UiIcon {
+                                            name: "x"
+                                            color: delNotifMouse.containsMouse ? Theme.danger : Theme.textMuted
+                                            implicitWidth: 15
+                                            implicitHeight: 15
+
                                             MouseArea {
                                                 id: delNotifMouse
                                                 anchors.fill: parent
                                                 hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
                                                 onClicked: NotificationService.dismissNotification(modelData.id)
                                             }
                                         }
@@ -980,9 +1013,9 @@ GlassPanel {
     PopupWindow {
         id: clipMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + clipBtn.x, clipBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -1207,11 +1240,12 @@ GlassPanel {
                                             color: delMouse.containsMouse ? Qt.rgba(255/255, 85/255, 85/255, 0.2) : "transparent"
                                             z: 10
 
-                                            Text {
+                                            UiIcon {
                                                 anchors.centerIn: parent
-                                                text: "✕"
+                                                name: "x"
                                                 color: delMouse.containsMouse ? Theme.red : Theme.comment
-                                                font.pixelSize: Theme.fsCaption
+                                                implicitWidth: 15
+                                                implicitHeight: 15
                                             }
 
                                             MouseArea {
@@ -1263,9 +1297,9 @@ GlassPanel {
     PopupWindow {
         id: btMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + btBtn.x, btBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -1363,7 +1397,12 @@ GlassPanel {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshBtMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
+                        UiIcon {
+                            anchors.centerIn: parent
+                            name: "refresh-cw"
+                            implicitWidth: 15
+                            implicitHeight: 15
+                        }
                         MouseArea {
                             id: refreshBtMouse
                             anchors.fill: parent
@@ -1576,9 +1615,9 @@ GlassPanel {
     PopupWindow {
         id: audioMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + audioBtn.x, audioBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -1894,9 +1933,9 @@ Connections {
     PopupWindow {
         id: brightMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + brightBtn.x, brightBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -1970,7 +2009,12 @@ Connections {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshBrightMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
+                        UiIcon {
+                            anchors.centerIn: parent
+                            name: "refresh-cw"
+                            implicitWidth: 15
+                            implicitHeight: 15
+                        }
                         MouseArea {
                             id: refreshBrightMouse
                             anchors.fill: parent
@@ -2103,9 +2147,9 @@ Connections {
     PopupWindow {
         id: mountMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + mountBtn.x, mountBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -2179,7 +2223,12 @@ Connections {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshMountMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
+                        UiIcon {
+                            anchors.centerIn: parent
+                            name: "refresh-cw"
+                            implicitWidth: 15
+                            implicitHeight: 15
+                        }
                         MouseArea {
                             id: refreshMountMouse
                             anchors.fill: parent
@@ -2358,9 +2407,9 @@ Connections {
     PopupWindow {
         id: netMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + netBtn.x, netBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -2458,7 +2507,12 @@ Connections {
                     Rectangle {
                         width: 20; height: 20; radius: 4
                         color: refreshNetMouse.containsMouse ? Theme.currentLine : "transparent"
-                        Text { text: "↻"; color: Theme.textMuted; font.pixelSize: Theme.fsStrong; anchors.centerIn: parent }
+                        UiIcon {
+                            anchors.centerIn: parent
+                            name: "refresh-cw"
+                            implicitWidth: 15
+                            implicitHeight: 15
+                        }
                         MouseArea {
                             id: refreshNetMouse
                             anchors.fill: parent
@@ -2605,9 +2659,9 @@ Connections {
     PopupWindow {
         id: batMenu
         anchor.window: window
-        anchor.rect.x: Math.round(root.x + root.width - implicitWidth)
+        anchor.rect.x: Theme.popupX(root, root.contentInset + netBtn.x, netBtn.width, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Right
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 
@@ -2918,9 +2972,9 @@ Connections {
     PopupWindow {
         id: trayContextMenu
         anchor.window: window
-        anchor.rect.x: Math.round(Math.max(10, Math.min(window.width - 175, root.x + root.activeTrayX + 12 - 87)))
+        anchor.rect.x: Theme.popupX(root, root.contentInset + root.activeTrayX, 24, implicitWidth, window.width, root.contentInset)
         anchor.rect.y: Theme.popupGap
-        anchor.edges: Edges.Bottom | Edges.Left
+        anchor.edges: Edges.Bottom
         visible: false
         color: "transparent"
 

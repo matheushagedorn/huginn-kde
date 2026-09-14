@@ -106,7 +106,10 @@ Item {
     // when that happens, instead of leaving a row that no longer exists.
     Connections {
         target: server.trackedNotifications
-        function onObjectRemoved(object) {
+        // The signal is objectRemovedPost, not objectRemoved. QML only warns
+        // about a Connections handler that matches nothing, so the wrong name
+        // was silently doing nothing at all.
+        function onObjectRemovedPost(object, index) {
             var kept = []
             for (var i = 0; i < root.notifications.length; i++) {
                 if (root.notifications[i].ref !== object) {

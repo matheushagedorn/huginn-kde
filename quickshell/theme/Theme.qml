@@ -127,17 +127,14 @@ Item {
     // small type needs looser leading, and bold small caps need tracking.
     readonly property real lhTight:  1.15
     readonly property real lhBody:   1.35
-    readonly property real trackCaps: 0.6
 
     // Fonts. "Inter" is not installed on this machine and silently resolved
     // to Noto Sans, so the family string was a lie; the stack now names what
     // is actually here first and keeps Inter for machines that do have it.
     readonly property string fontFamily: "Inter, Noto Sans, DejaVu Sans, Sans-Serif"
     readonly property string fontMono: "MesloLGS Nerd Font Mono, Noto Sans Mono, monospace"
-    // Icon glyphs (U+F0000 block). JetBrainsMono/Symbols/CaskaydiaCove are
-    // NOT installed here and fell through to Noto Sans, which renders tofu.
-    // MesloLGS Nerd Font is installed and covers the block.
-    readonly property string fontIcon: "MesloLGS Nerd Font, JetBrainsMono Nerd Font, Symbols Nerd Font, Sans-Serif"
+    // No fontIcon any more: icons are SVG from the shared set, not glyphs
+    // borrowed from whichever Nerd Font happens to be installed.
 
     // Spacing scale (4pt grid).
     readonly property int sp1: 4
@@ -158,6 +155,63 @@ Item {
     readonly property int barHeight: 44
     readonly property int barCapsule: 28
     readonly property int popupGap: barHeight + sp1
+
+    // Where a popup opens.
+    //
+    // There were five rules for this in one bar: a magic constant, centring on
+    // the whole bar rather than on the button, right-aligning to the bar, a
+    // hand-tuned clamp, and one that actually followed its button. A popup
+    // belongs to the control that opened it, so its leading edge lines up with
+    // that control and it slides back inside the screen rather than hanging
+    // off the end.
+    // `trigger.x` alone is not enough: it is relative to the row the control
+    // sits in, and that row is already inset inside the panel. Mapping through
+    // the bar is what makes the edges actually line up.
+    // `offsetX` is the control's x inside the bar, built from plain properties
+    // so the binding re-runs when things move. An earlier version called
+    // trigger.mapToItem() here, which reads correctly exactly once: it is a
+    // function call, not a property, so QML cannot know to re-evaluate it. The
+    // centre bar re-centres every time the track title changes, and the popups
+    // stayed 15px behind wherever their button had drifted to.
+    // Every popup pairs this with `anchor.edges: Edges.Bottom` and nothing
+    // else. Adding Edges.Left or Edges.Right makes the anchor apply its own
+    // offset on top of the x computed here, which is why two of them sat a
+    // dozen pixels off while the rest looked fine.
+    function popupX(bar, offsetX, triggerWidth, popupWidth, windowWidth, pad) {
+        if (!bar) return 0
+        var inset = pad === undefined ? 0 : pad
+        var leading = bar.x + offsetX
+        var trailing = leading + triggerWidth - popupWidth
+        var start
+
+        if (offsetX <= inset) {
+            // First control in the panel: flush with the panel's leading edge.
+            // Lining up with the button instead would indent the popup by the
+            // panel's padding, and the eye reads the panel edge, not the
+            // button's.
+            start = bar.x
+        } else if (offsetX + triggerWidth >= bar.width - inset) {
+            // Last control: flush with the panel's trailing edge.
+            start = bar.x + bar.width - popupWidth
+        } else if (offsetX + triggerWidth / 2 < bar.width / 2) {
+            // Left half of the panel opens rightwards, right half leftwards,
+            // so a popup always grows away from the nearer edge instead of
+            // spilling past it.
+            start = leading
+        } else {
+            start = trailing
+        }
+
+        // Kept inside its own panel where it fits; a popup wider than the
+        // panel falls back to the screen.
+        var lo = 0
+        var hi = Math.max(0, windowWidth - popupWidth)
+        if (popupWidth <= bar.width) {
+            lo = Math.max(lo, bar.x)
+            hi = Math.min(hi, bar.x + bar.width - popupWidth)
+        }
+        return Math.round(Math.max(lo, Math.min(start, Math.max(lo, hi))))
+    }
 
     // ---------------------------------------------------------------------
     // Contrast-corrected roles (WCAG AA, 4.5:1 for body-sized text)
