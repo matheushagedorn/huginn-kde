@@ -18,6 +18,19 @@ from gi.repository import GLib
 ACTIVE_FILE = "/tmp/huginn_active_app.txt"
 OPEN_WINS_FILE = "/tmp/huginn_open_windows.json"
 
+# Set the first time KWin actually talks to us. The dock has no other source
+# of open windows, so "the script was loaded" is not good enough: what counts
+# is that state arrived.
+_kwin_heard_from = False
+_listener_attempts = 0
+MAX_LISTENER_ATTEMPTS = 4
+
+
+def _log(message):
+    # stderr, so it lands in the journal of huginn.service. These failures used
+    # to be swallowed whole, which is why a mute dock looked like a healthy one.
+    print("[huginn/active_window] " + message, file=sys.stderr, flush=True)
+
 _icon_cache = {}
 
 def get_icon_search_dirs():
@@ -359,6 +372,8 @@ class ActiveAppService(dbus.service.Object):
 
     @dbus.service.method("io.quickshell.ActiveApp", in_signature="sss")
     def updateState(self, active_app, open_windows_json, is_fullscreen_str="false"):
+        global _kwin_heard_from
+        _kwin_heard_from = True
         try:
             with open(ACTIVE_FILE, "w") as f:
                 f.write(str(active_app).strip().lower())
@@ -415,7 +430,7 @@ def cleanup_kwin_listener():
     except Exception:
         pass
 
-def setup_kwin_listener():
+def setup_kwin_listener(settle=0.0):
     js_template = os.path.expanduser("~/.config/quickshell/services/js/kwin_state_listener.js")
     if not os.path.exists(js_template):
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -427,9 +442,17 @@ def setup_kwin_listener():
     try:
         if os.path.exists(js_template):
             shutil.copyfile(js_template, js_path)
-        
+
         # Unload previous script instance to prevent KWin memory leaks & duplicate listeners
         cleanup_kwin_listener()
+
+        # KWin processes the unload on its own thread. Loading the same path
+        # immediately afterwards can hand back the id of the script that is
+        # still being torn down: `run` then goes to a dead object, KWin still
+        # reports the path as loaded, and nothing is ever emitted. A short
+        # pause before the load is what separates the two.
+        if settle > 0:
+            time.sleep(settle)
 
         res = subprocess.check_output(
             ["busctl", "--user", "call", "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "loadScript", "s", js_path],
@@ -440,8 +463,35 @@ def setup_kwin_listener():
             ["busctl", "--user", "call", "org.kde.KWin", f"/Scripting/Script{sid}", "org.kde.kwin.Script", "run"],
             text=True, stderr=subprocess.DEVNULL, timeout=3.0
         )
-    except Exception:
-        pass
+        return True
+    except Exception as e:
+        _log(f"could not load the KWin listener: {e}")
+        return False
+
+def _verify_listener():
+    """Reloads the KWin listener if it never spoke to us.
+
+    Called from the GLib loop, not from setup: the listener answers over DBus,
+    and nothing arrives until the loop is running. Returning True keeps the
+    timer alive for another round; False stops it.
+    """
+    global _listener_attempts
+
+    if _kwin_heard_from:
+        if _listener_attempts:
+            _log("KWin listener recovered")
+        return False
+
+    _listener_attempts += 1
+    if _listener_attempts > MAX_LISTENER_ATTEMPTS:
+        _log("KWin listener stayed silent after "
+             f"{MAX_LISTENER_ATTEMPTS} attempts; the dock will not see open windows")
+        return False
+
+    _log(f"KWin listener silent, reloading (attempt {_listener_attempts})")
+    setup_kwin_listener(settle=0.4)
+    return True
+
 
 def _on_signal(signum, frame):
     cleanup_kwin_listener()
@@ -466,7 +516,12 @@ def main():
         bus_name = dbus.service.BusName("io.quickshell.ActiveApp", bus=dbus.SessionBus())
         service = ActiveAppService(bus_name)
         setup_kwin_listener()
-        
+
+        # Nothing above proves the listener is alive; only an incoming
+        # updateState does. Check once the loop is running and retry if the
+        # first load landed on a script KWin was still tearing down.
+        GLib.timeout_add_seconds(3, _verify_listener)
+
         loop = GLib.MainLoop()
         loop.run()
     except Exception:
