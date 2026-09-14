@@ -167,8 +167,13 @@ def parse_desktop_apps():
         return fallback_path
 
     def parse_desktop(f):
+        # Reads [Desktop Entry] plus every [Desktop Action <id>] group. The
+        # action groups are what the launcher context menu offers ("New
+        # private window", "New document"); they live in the same file and
+        # were simply being skipped before.
         entry = {}
-        in_desktop = False
+        actions = {}
+        current = None
         try:
             with open(f, 'r', encoding='utf-8', errors='ignore') as fp:
                 for line in fp:
@@ -176,16 +181,46 @@ def parse_desktop_apps():
                     if not line or line.startswith('#'):
                         continue
                     if line.startswith('['):
-                        in_desktop = (line == '[Desktop Entry]')
+                        if line == '[Desktop Entry]':
+                            current = entry
+                        elif line.startswith('[Desktop Action ') and line.endswith(']'):
+                            action_id = line[len('[Desktop Action '):-1].strip()
+                            current = actions.setdefault(action_id, {})
+                        else:
+                            current = None
                         continue
-                    if in_desktop and '=' in line:
+                    if current is not None and '=' in line:
                         k, v = line.split('=', 1)
                         k = k.strip()
-                        if k not in entry:
-                            entry[k] = v.strip()
+                        if k not in current:
+                            current[k] = v.strip()
         except Exception:
             pass
+        entry['__actions__'] = actions
         return entry
+
+    def build_actions(s):
+        # Keeps the order declared in Actions=, drops entries the file names
+        # but never defines, and drops hidden ones.
+        out = []
+        groups = s.get('__actions__', {})
+        for action_id in [a.strip() for a in s.get('Actions', '').split(';') if a.strip()]:
+            g = groups.get(action_id)
+            if not g:
+                continue
+            action_name = g.get('Name', '')
+            action_exec = g.get('Exec', '')
+            if not action_name or not action_exec:
+                continue
+            only_in = [x.strip().lower() for x in g.get('OnlyShowIn', '').split(';') if x.strip()]
+            if only_in and 'kde' not in only_in:
+                continue
+            out.append({
+                'name': action_name,
+                'exec': action_exec,
+                'icon': resolve_icon(g.get('Icon', '')) if g.get('Icon') else ''
+            })
+        return out
 
     desktop_dirs = [
         os.path.expanduser('~/.local/share/applications'),
@@ -260,7 +295,9 @@ def parse_desktop_apps():
                     'name': name,
                     'exec': exec_cmd,
                     'icon': icon,
-                    'categories': cats
+                    'categories': cats,
+                    'comment': s.get('Comment', ''),
+                    'actions': build_actions(s)
                 })
         except Exception:
             pass
