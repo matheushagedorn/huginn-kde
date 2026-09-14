@@ -39,6 +39,10 @@ function updateWindows() {
                     openApps.push({
                         id: winId,
                         appId: cls,
+                        // Wine and Proton report the same class for every
+                        // game, so the pid is the only way back to which
+                        // executable is actually running.
+                        pid: w.pid || 0,
                         caption: w.caption || cls,
                         x: wx,
                         y: wy,

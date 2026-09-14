@@ -10,6 +10,7 @@ import shutil
 import configparser
 import dbus
 import dbus.service
+import pe_icon
 import dbus.mainloop.glib
 import signal
 import atexit
@@ -150,9 +151,13 @@ def get_steam_library_paths():
 
 def resolve_game_info(app_lower):
     # Handle Steam Apps (e.g. steam_app_1245620 or steam_app_2357570 or steam_app_570)
+    #
+    # Only numeric ids: Wine and Proton label windows `steam_app_default` when
+    # no Steam AppID is set, which is every game launched from Heroic. Those
+    # used to fall through this branch and come out wearing the Steam icon.
     if 'steam_app_' in app_lower:
         parts = app_lower.split('steam_app_')
-        if len(parts) > 1:
+        if len(parts) > 1 and parts[1].split('.')[0].isdigit():
             steam_id = parts[1].split('.')[0]
             game_name = None
             game_icon = None
@@ -275,6 +280,107 @@ def resolve_game_info(app_lower):
 
     return None
 
+# Executable path -> resolved info. Keyed by the exe rather than by window
+# class on purpose: every Heroic game shares the class `steam_app_default`, so
+# a class-keyed cache would hand the second game the first game's icon.
+_wine_game_cache = {}
+
+HEROIC_CONFIG = os.path.expanduser('~/.config/heroic')
+
+
+def _exe_from_pid(pid):
+    """The Windows path of the running executable, straight from its cmdline."""
+    try:
+        with open(f'/proc/{int(pid)}/cmdline', 'rb') as f:
+            argv = [a.decode('utf-8', 'replace') for a in f.read().split(b'\0') if a]
+    except Exception:
+        return ""
+    for arg in argv:
+        if arg.lower().endswith('.exe'):
+            return arg
+    return ""
+
+
+def _heroic_library():
+    """Every installed game Heroic knows about, as (title, executable) pairs.
+
+    Reads the sideload library plus the GOG and Epic stores when they hold
+    anything; a missing or malformed file just contributes nothing.
+    """
+    games = []
+
+    sideload = os.path.join(HEROIC_CONFIG, 'sideload_apps', 'library.json')
+    try:
+        with open(sideload, 'r', encoding='utf-8') as f:
+            for game in json.load(f).get('games', []):
+                executable = (game.get('install') or {}).get('executable', '')
+                if game.get('title') and executable:
+                    games.append((game['title'], executable, game.get('art_square') or game.get('art_cover') or ''))
+    except Exception:
+        pass
+
+    for store in ('gog_store/installed.json', 'store_cache/nile_library.json'):
+        try:
+            with open(os.path.join(HEROIC_CONFIG, store), 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            entries = data.get('installed', data.get('games', [])) if isinstance(data, dict) else data
+            for game in entries or []:
+                if not isinstance(game, dict):
+                    continue
+                executable = game.get('executable') or (game.get('install') or {}).get('executable', '')
+                title = game.get('title') or game.get('name')
+                if title and executable:
+                    games.append((title, executable, ''))
+        except Exception:
+            pass
+
+    return games
+
+
+def _match_heroic_game(windows_exe):
+    """Finds the game whose executable matches the running one.
+
+    Matched on the file name: the window reports a Windows path (`X:\\Games\\...`)
+    while Heroic stores the Linux one, and mapping drive letters back would
+    mean parsing the prefix's dosdevices for no extra certainty.
+    """
+    target = os.path.basename(windows_exe.replace('\\', '/')).lower()
+    if not target:
+        return None, ""
+    for title, executable, _art in _heroic_library():
+        if os.path.basename(executable).lower() == target:
+            return title, executable
+    return None, ""
+
+
+def resolve_wine_game(app_lower, pid):
+    """Name and icon for a game running under Wine or Proton.
+
+    The icon comes out of the executable itself, which is what the game shows
+    in its own title bar on Windows.
+    """
+    windows_exe = _exe_from_pid(pid)
+    if not windows_exe:
+        return None
+
+    if windows_exe in _wine_game_cache:
+        return _wine_game_cache[windows_exe]
+
+    title, unix_exe = _match_heroic_game(windows_exe)
+    if not title:
+        # Not in any catalogue: the file name is still better than "Steam Game"
+        title = os.path.basename(windows_exe.replace('\\', '/'))[:-4].replace('_', ' ').strip() or "Game"
+
+    icon = pe_icon.icon_for_exe(unix_exe) if unix_exe else ""
+    if not icon:
+        # Heroic launched it, so its icon is the honest fallback
+        icon = "com.heroicgameslauncher.hgl"
+
+    info = {"appId": app_lower, "name": title, "icon": icon}
+    _wine_game_cache[windows_exe] = info
+    return info
+
+
 _desktop_file_cache = None
 
 def get_all_desktop_files():
@@ -290,11 +396,25 @@ def get_all_desktop_files():
         )
     return _desktop_file_cache
 
-def resolve_app_info(app_id):
+def _is_wine_window(app_lower):
+    return (app_lower.startswith('steam_app_') and not app_lower.split('steam_app_')[-1].split('.')[0].isdigit()) \
+        or app_lower in ('wine', 'wine64', 'proton', 'gamescope', 'explorer.exe') \
+        or app_lower.endswith('.exe')
+
+
+def resolve_app_info(app_id, pid=0):
     if not app_id:
         return {"appId": "", "name": "Application", "icon": ""}
 
     app_lower = app_id.lower().strip()
+
+    # Checked before the class cache: these windows all share one class, so
+    # the answer depends on the process, not on the class.
+    if pid and _is_wine_window(app_lower):
+        wine_info = resolve_wine_game(app_lower, pid)
+        if wine_info:
+            return wine_info
+
     if app_lower in _icon_cache:
         return _icon_cache[app_lower]
 
@@ -386,7 +506,7 @@ class ActiveAppService(dbus.service.Object):
             for item in raw_wins:
                 if isinstance(item, dict):
                     app_id = item.get("appId", "")
-                    info = resolve_app_info(app_id)
+                    info = resolve_app_info(app_id, item.get("pid", 0))
                     enriched_wins.append({
                         "id": item.get("id", app_id),
                         "appId": app_id,
