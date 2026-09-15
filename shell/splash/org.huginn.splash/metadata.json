@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "antigravity@google.com",
+                "Name": "Huginn"
+            }
+        ],
+        "Description": "Dynamic theme-following splash screen for KDE Plasma 6",
+        "Id": "org.huginn.splash",
+        "License": "GPLv2+",
+        "Name": "Huginn Dynamic Splash",
+        "ServiceTypes": [
+            "KPackage/Package"
+        ],
+        "Version": "1.0"
+    }
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # Huginn — installer
-# QuickShell desktop shell for KDE Plasma (Wayland)
+# Huginn desktop shell for KDE Plasma (Wayland)
 # ==============================================================================
 
 set -eo pipefail
@@ -23,7 +23,7 @@ MISSING_DEPS=()
 
 echo -e "${BOLD}${CYAN}"
 echo "=================================================="
-echo "   Huginn — QuickShell desktop shell for KDE      "
+echo "   Huginn — desktop shell for KDE Plasma            "
 echo "=================================================="
 echo -e "${NC}"
 
@@ -143,7 +143,7 @@ deploy_configs() {
     mkdir -p "$CONFIG_DIR"
 
     # Symlinked to the repository, so git pull updates the config directly.
-    safe_link "$SCRIPT_DIR/quickshell" "$CONFIG_DIR/quickshell"
+    safe_link "$SCRIPT_DIR/shell" "$CONFIG_DIR/huginn"
 
     for dir in fastfetch wallust; do
         if [ -d "$SCRIPT_DIR/$dir" ] && [ -n "$(ls -A "$SCRIPT_DIR/$dir" 2>/dev/null)" ]; then
@@ -151,7 +151,7 @@ deploy_configs() {
         fi
     done
 
-    chmod +x "$SCRIPT_DIR/quickshell/services/python/"*.py 2>/dev/null || true
+    chmod +x "$SCRIPT_DIR/shell/services/python/"*.py 2>/dev/null || true
 
     success "Configuration linked."
 }
@@ -190,10 +190,10 @@ deploy_wallpapers() {
 # name typed by hand in the System Settings dialog is a name that drifts.
 # ------------------------------------------------------------------------------
 HELPERS=(
-    "huginn-volume-up:quickshell ipc call volume increase"
-    "huginn-volume-down:quickshell ipc call volume decrease"
-    "huginn-volume-mute:quickshell ipc call volume mute"
-    "huginn-launcher:quickshell ipc call launcher toggle"
+    "huginn-volume-up:quickshell -p \"$HOME/.config/huginn\" ipc call volume increase"
+    "huginn-volume-down:quickshell -p \"$HOME/.config/huginn\" ipc call volume decrease"
+    "huginn-volume-mute:quickshell -p \"$HOME/.config/huginn\" ipc call volume mute"
+    "huginn-launcher:quickshell -p \"$HOME/.config/huginn\" ipc call launcher toggle"
     "huginn-lock:touch /tmp/huginn_lock_trigger 2>/dev/null || true; loginctl lock-session"
 )
 
@@ -310,6 +310,13 @@ clean_legacy_names() {
     fi
     # Units carried the old name before the rename.
     local unit
+    # The config directory used to be named after the framework. A machine
+    # coming from that layout has a stale symlink pointing at it.
+    if [ -L "$CONFIG_DIR/quickshell" ]; then
+        rm -f "$CONFIG_DIR/quickshell"
+        info "Removed the old ~/.config/quickshell link; the shell now lives in ~/.config/huginn."
+    fi
+
     for unit in quickshell.service quickshell-recolor-watcher.service; do
         if [ -f "$CONFIG_DIR/systemd/user/$unit" ]; then
             systemctl --user disable --now "$unit" >/dev/null 2>&1 || true
@@ -350,20 +357,20 @@ setup_systemd_service() {
 
     cat > "$service_dir/huginn.service" <<EOF
 [Unit]
-Description=Huginn QuickShell Desktop Shell
+Description=Huginn desktop shell
 After=graphical-session.target
 PartOf=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=${qs_bin} -p %h/.config/quickshell
+ExecStart=${qs_bin} -p %h/.config/huginn
 Restart=always
 RestartSec=3
 Environment=QT_QPA_PLATFORM=wayland
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h/.local/bin
 # Holds the unit in "activating" until the shell actually answers, so anything
 # ordered after it starts against a screen the bar has already claimed.
-ExecStartPost=/usr/bin/bash -c 'n=0; while [ \$n -lt 60 ]; do ${qs_bin} ipc show >/dev/null 2>&1 && exit 0; sleep 0.1; n=\$((n+1)); done; exit 0'
+ExecStartPost=/usr/bin/bash -c 'n=0; while [ \$n -lt 60 ]; do ${qs_bin} -p %h/.config/huginn ipc show >/dev/null 2>&1 && exit 0; sleep 0.1; n=\$((n+1)); done; exit 0'
 
 [Install]
 WantedBy=graphical-session.target
@@ -382,7 +389,7 @@ PartOf=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 %h/.config/quickshell/services/python/recolor_watcher.py
+ExecStart=/usr/bin/python3 %h/.config/huginn/services/python/recolor_watcher.py
 Restart=always
 RestartSec=3
 Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h/.local/bin:%h/.cargo/bin

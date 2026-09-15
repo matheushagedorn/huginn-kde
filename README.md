@@ -27,16 +27,24 @@ The dock, which stays hidden until the pointer reaches the bottom edge:
 
 ## What's included
 
-- **Top bar** — weather, clock with calendar, media player, system tray,
-  volume, brightness, network and Bluetooth.
+- **Top bar** — one full-width glass slab: virtual desktops, clock, media
+  player, system tray, volume, brightness, network and Bluetooth. The glass is
+  the wallpaper itself, blurred and aligned to what sits behind the bar.
 - **Auto-hiding dock** — pinned apps and open windows, split by a separator,
   with window previews on click and drag-to-reorder.
 - **Application launcher** with search and a built-in calculator.
 - **On-screen display** for volume and brightness.
 - **Desktop monitoring widget** — CPU, GPU, memory, disk and network, with
-  graphs and real hardware readings (nothing hardcoded).
+  graphs and real hardware readings (nothing hardcoded). One card anatomy for
+  all four: heading, device, usage bar, readings, history graph.
+- **Dashboard** under the clock — calendar, current conditions, five-day
+  forecast and system readings in one panel.
+- **A bar on every monitor** — the secondary screens get the same slab, with
+  the virtual desktops and the clock in the places the primary bar keeps them.
 - **Theme engine** that propagates the palette to GTK, Konsole, Alacritty,
-  btop, Starship, VS Code and others.
+  btop, Starship, VS Code and others, with a **From wallpaper** variant that
+  derives the palette from the picture on screen (Pillow only, no matugen or
+  wallust needed).
 
 ## Requirements
 
@@ -58,7 +66,7 @@ cd ~/Projects/huginn
 ./install.sh
 ```
 
-`~/.config/quickshell` becomes a symlink to the repository, so `git pull`
+`~/.config/huginn` becomes a symlink to the repository, so `git pull`
 updates the configuration directly. Pre-existing configs are moved to
 `.bak.<timestamp>` rather than overwritten.
 
@@ -128,13 +136,13 @@ with the delay.
 
 - **Monitor** — windows are pinned to a specific output (`DP-2` by default). If
   yours is named differently (`kscreen-doctor -o` lists them), adjust the
-  `screen:` line in `quickshell/shell.qml` and in the launcher and lockscreen
+  `screen:` line in `shell/shell.qml` and in the launcher and lockscreen
   modules.
 - **Theme** — the active theme lives in `~/.config/huginn_current_theme.txt`.
-  Available palettes are defined in `quickshell/theme/Theme.qml` (Tokyo Night,
+  Available palettes are defined in `shell/theme/Theme.qml` (Tokyo Night,
   Catppuccin, Gruvbox, Nord, Rosé Pine, Everforest, Solarized and more).
 - **Pinned dock apps** — reorder by dragging, or edit
-  `quickshell/services/TaskService.qml`.
+  `shell/services/TaskService.qml`.
 
 ## Known limitations
 
@@ -166,6 +174,6 @@ appear when the hardware actually exists, and the removal of the `sudo`
 escalation the original installer triggered in a loop.
 
 Interface icons are [Lucide](https://lucide.dev) (ISC), vendored under
-`quickshell/icons/` so the shell has one icon language instead of borrowing
+`shell/icons/` so the shell has one icon language instead of borrowing
 from the system icon theme, emoji and font glyphs at the same time. Application
 icons still come from the icon theme, since an app's icon is its identity.
