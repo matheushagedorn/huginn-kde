@@ -199,19 +199,57 @@ Item {
                             }
                         }
 
-                        // Running / Active Indicator Bar at Bottom (Vibrant Glowing Indicator)
-                        Rectangle {
+                        // One dash per open window, the focused one in accent.
+                        // The old single bar said only "open" and "has focus",
+                        // never how many windows were behind the icon.
+                        Row {
+                            id: runIndicator
+
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: 3
-                            height: 3.5
-                            width: isAppActive ? 16 : (isAppRunning ? 6 : 0)
-                            radius: 1.75
-                            color: isAppActive ? Theme.accent : Theme.subAccent
                             visible: isAppRunning || isAppActive
 
-                            Behavior on width {
-                                NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                            // Six dashes is what fits under a 42px icon. Past
+                            // that the row would outgrow the icon it belongs to;
+                            // the picker's header still has the real number.
+                            readonly property var windows: {
+                                let wins = TaskService.isRunning(modelData.appId)
+                                    ? TaskService.getWindowsForApp(modelData.appId)
+                                    : []
+                                return wins.length > 6 ? wins.slice(0, 6) : wins
+                            }
+                            readonly property int count: Math.max(1, windows.length)
+                            readonly property bool crowded: count > 4
+
+                            spacing: crowded ? 2 : 3
+
+                            Repeater {
+                                model: runIndicator.count
+
+                                Rectangle {
+                                    readonly property var win: index < runIndicator.windows.length
+                                        ? runIndicator.windows[index]
+                                        : null
+                                    // With no window list to go by, the icon's
+                                    // own active state is the best there is.
+                                    readonly property bool focused: win ? !!win.active : isAppActive
+
+                                    height: 3.5
+                                    radius: 1.75
+                                    width: focused
+                                        ? (runIndicator.count === 1 ? 16 : 12)
+                                        : (runIndicator.crowded ? 4 : 6)
+                                    color: focused
+                                        ? Theme.accent
+                                        : Qt.rgba(Theme.subAccent.r, Theme.subAccent.g, Theme.subAccent.b, 0.55)
+                                    anchors.verticalCenter: parent.verticalCenter
+
+                                    Behavior on width {
+                                        NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+                                    }
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
                             }
                         }
 
