@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "KWin/WindowSwitcher",
+    "KPlugin": {
+        "Authors": [{"Name": "Huginn"}],
+        "Description": "Left rail holding the open windows as a deck of cards",
+        "Id": "huginn",
+        "License": "GPLv2+",
+        "Name": "Huginn",
+        "Version": "1.0"
+    }
+}
