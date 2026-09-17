@@ -441,19 +441,41 @@ def resolve_app_info(app_id, pid=0):
                 if icon_name and app_name:
                     break
 
+    # No exact .desktop for this class: fall back to a partial match, but pick
+    # the most specific candidate instead of the first one listed. Taking the
+    # first is how a Brave picture-in-picture window, whose class is plain
+    # "brave", ended up wearing the name and icon of the WhatsApp web app,
+    # whose file (brave-hnpf...-Default.desktop) merely happens to sort first.
+    #
+    # Two directions, two rules. A file whose name is contained in the class
+    # ("brave-browser" for "brave-browser-nightly") is better the longer it is:
+    # more of the class is accounted for. A file whose name contains the class
+    # ("brave-browser" and the web app, both for "brave") is better the shorter
+    # it is: it carries the least that the class did not ask for.
     if not icon_name or not app_name:
+        best_df = None
+        best_score = None
         for df in desktop_files:
             basename = os.path.basename(df).lower()
             base_no_ext = basename.replace('.desktop', '')
-            if app_lower in basename or base_no_ext in app_lower:
+            if base_no_ext in app_lower:
+                score = (1, len(base_no_ext))
+            elif app_lower in base_no_ext:
+                score = (0, -len(base_no_ext))
+            else:
+                continue
+            if best_score is None or score > best_score:
                 entry = parse_desktop(df)
-                if entry:
-                    if 'Icon' in entry and not icon_name:
-                        icon_name = entry['Icon']
-                    if 'Name' in entry and not app_name:
-                        app_name = entry['Name']
-                    if icon_name and app_name:
-                        break
+                if not entry:
+                    continue
+                best_score = score
+                best_df = entry
+
+        if best_df:
+            if not icon_name:
+                icon_name = best_df.get('Icon')
+            if not app_name:
+                app_name = best_df.get('Name')
 
     if not icon_name:
         icon_name = app_lower

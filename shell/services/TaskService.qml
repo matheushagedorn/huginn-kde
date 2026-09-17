@@ -143,7 +143,27 @@ Item {
             return true;
         }
 
+        // A window can carry the bare class of the program that owns it: Brave's
+        // picture-in-picture window is "brave", while the dock knows
+        // "brave-browser". It belongs to the least specific pinned app that
+        // starts with that prefix -- matching every one of them would hand the
+        // same window to the WhatsApp web app too, which shares the prefix and
+        // would then claim a window that is not its own.
+        if (a.startsWith(b + "-") && prefixOwner(b) === a) return true;
+        if (b.startsWith(a + "-") && prefixOwner(a) === b) return true;
+
         return false;
+    }
+
+    function prefixOwner(shortId) {
+        let best = ""
+        for (let i = 0; i < pinnedApps.length; i++) {
+            let id = (pinnedApps[i].appId || "").toLowerCase().trim()
+            if (id.startsWith(shortId + "-") && (best === "" || id.length < best.length)) {
+                best = id
+            }
+        }
+        return best
     }
 
     function isRunning(appId) {

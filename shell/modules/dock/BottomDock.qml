@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import "../../components"
 import "../../services"
@@ -225,10 +226,19 @@ Item {
 
                         onEntered: {
                             dockRow.hoveredDockIndex = index
+                            previewCloseTimer.stop()
+                            root.pendingPreviewApp = modelData
+                            root.pendingPreviewItem = itemMouse
+                            previewOpenTimer.restart()
                         }
 
                         onExited: {
                             if (dockRow.hoveredDockIndex === index) dockRow.hoveredDockIndex = -1
+                            previewOpenTimer.stop()
+                            // Leaving the icon is what starts the countdown; the
+                            // timer itself checks whether the pointer landed on
+                            // the popup instead.
+                            if (root.previewActive) previewCloseTimer.restart()
                         }
 
                         property real dragXOffset: 0
@@ -312,14 +322,9 @@ Item {
                             } else if (mouse.button === Qt.LeftButton) {
                                 let instances = TaskService.isRunning(modelData.appId) ? TaskService.getWindowsForApp(modelData.appId) : []
                                 if (instances && instances.length > 1) {
-                                    // More than one window: show the picker cards, on click only.
-                                    let targetParent = root.dockWindow ? root.dockWindow.contentItem : root
-                                    let pt = itemMouse.mapToItem(targetParent, 0, 0)
-                                    root.previewTargetX = Math.round(pt.x + itemMouse.width / 2)
-                                    root.previewTargetApp = modelData
-                                    root.previewWindowInstances = instances
-                                    root.previewActive = true
-                                    previewCloseTimer.restart()
+                                    // A click skips the dwell and opens it now.
+                                    previewOpenTimer.stop()
+                                    root.openWindowPicker(modelData, itemMouse)
                                 } else {
                                     root.previewActive = false
                                     root.isPreviewHovered = false
@@ -348,7 +353,11 @@ Item {
             for (let i = 0; i < TaskService.runningWindows.length; i++) {
                 let win = TaskService.runningWindows[i]
                 let app = (win.appId || "").toLowerCase()
-                if (app !== "" && !pinnedIds.includes(app)) {
+                // Exact id is not enough: a window the dock already shows under
+                // another entry (an alias, or a bare class like "brave") used to
+                // get a second icon of its own next to the app it belongs to.
+                let claimed = list.some(entry => TaskService.appIdsMatch(entry.appId || "", app))
+                if (app !== "" && !pinnedIds.includes(app) && !claimed) {
                     pinnedIds.push(app)
                     list.push({
                         appId: win.appId,
@@ -483,9 +492,81 @@ Item {
     property bool isPreviewHovered: false
     property bool isCardHovered: false
     property bool previewActive: false
+    // uuid da janela -> caminho do PNG capturado quando o picker abriu.
+    property var previewShots: ({})
 
     onPreviewActiveChanged: {
         PopupService.previewOpen = root.previewActive
+    }
+
+    // Which icon the pointer is resting on, and for how long: the picker opens
+    // on hover, but only after a dwell, so crossing the dock on the way
+    // somewhere else does not light up every app that has two windows.
+    property var pendingPreviewApp: null
+    property var pendingPreviewItem: null
+
+    Timer {
+        id: previewOpenTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (!root.pendingPreviewItem || !root.pendingPreviewItem.containsMouse) return;
+            root.openWindowPicker(root.pendingPreviewApp, root.pendingPreviewItem)
+        }
+    }
+
+    // Opening is the same whether the pointer rested on the icon or clicked it.
+    // No close timer is armed here: doing that on open was what made the picker
+    // vanish 400ms later unless the pointer reached it in time.
+    function openWindowPicker(app, item) {
+        if (!app || !item) return;
+        let instances = TaskService.isRunning(app.appId) ? TaskService.getWindowsForApp(app.appId) : []
+        if (!instances || instances.length <= 1) return;
+
+        let targetParent = root.dockWindow ? root.dockWindow.contentItem : root
+        let pt = item.mapToItem(targetParent, 0, 0)
+        root.previewTargetX = Math.round(pt.x + item.width / 2)
+        root.previewTargetApp = app
+        root.previewWindowInstances = instances
+        root.previewActive = true
+        previewCloseTimer.stop()
+        root.captureWindowShots(instances)
+    }
+
+    // A window's pixels are not readable from a normal Wayland client, so the
+    // cards show a frame captured through KWin's ScreenShot2 when the picker
+    // opens: a snapshot, not a live thumbnail. The helper binary is the one
+    // KWin allows to ask (see org.huginn.shell-helper.desktop); a window with
+    // no buffer, such as a minimized one, just does not come back and the card
+    // falls back to the application icon.
+    function captureWindowShots(instances) {
+        if (!instances || instances.length === 0) return;
+        let uuids = []
+        for (let i = 0; i < instances.length; i++) {
+            let id = instances[i] ? String(instances[i].id || "") : ""
+            if (id) uuids.push(id)
+        }
+        if (uuids.length === 0) return;
+        shotProc.command = [Quickshell.env("HOME") + "/.local/bin/huginn-shell-helper",
+                            Quickshell.env("HOME") + "/.config/huginn/services/python/window_shot.py"].concat(uuids)
+        shotProc.running = true
+    }
+
+    Process {
+        id: shotProc
+        stdout: SplitParser {
+            onRead: data => {
+                let line = data.trim()
+                if (!line) return;
+                let parts = line.split("\t")
+                if (parts.length < 2) return;
+                // Reassigned whole: QML only notices a property change, not a
+                // mutation inside the object.
+                let next = Object.assign({}, root.previewShots)
+                next[parts[0]] = parts[1]
+                root.previewShots = next
+            }
+        }
     }
 
     onContextTargetAppChanged: {
@@ -523,7 +604,8 @@ Item {
         interval: 400
         repeat: false
         onTriggered: {
-            if (!root.isPreviewHovered && !previewMouseArea.containsMouse && !root.isCardHovered) {
+            if (!root.isPreviewHovered && !previewMouseArea.containsMouse && !root.isCardHovered
+                    && dockRow.hoveredDockIndex < 0) {
                 root.previewActive = false
                 root.isPreviewHovered = false
                 root.isCardHovered = false
@@ -653,23 +735,37 @@ Item {
                         }
                     }
 
-                    // Window Preview Cards (Empilhados verticalmente)
-                    ColumnLayout {
+                    // The windows of this application, side by side, each one
+                    // showing the frame captured when the picker opened.
+                    RowLayout {
                         id: previewCardsRow
-                        implicitWidth: 230
                         spacing: 8
                         Repeater {
-                            model: 3
+                            // Six is where the row stops fitting next to its own
+                            // icon on a 1920 screen; the count in the header
+                            // still tells the truth.
+                            model: root.previewWindowInstances
+                                ? Math.min(root.previewWindowInstances.length, 6)
+                                : 0
 
                             Item {
                                 id: cardItem
                                 property var winData: (root.previewWindowInstances && index < root.previewWindowInstances.length) ? root.previewWindowInstances[index] : null
                                 visible: winData !== null
 
-                                implicitWidth: 230
-                                implicitHeight: 48
+                                implicitWidth: 176
+                                implicitHeight: cardBody.implicitHeight + 16
                                 Layout.preferredWidth: implicitWidth
                                 Layout.preferredHeight: implicitHeight
+                                Layout.alignment: Qt.AlignBottom
+
+                                // The frame captured for this window, if it came
+                                // back: the key is the same id the dock already
+                                // uses for the window.
+                                readonly property string shotPath: {
+                                    let id = winData ? String(winData.id || "") : ""
+                                    return (id && root.previewShots[id]) ? root.previewShots[id] : ""
+                                }
 
                                 property bool cardHovered: cardMouseArea.containsMouse
 
@@ -722,56 +818,80 @@ Item {
                                         }
                                     }
 
-                                    RowLayout {
+                                    ColumnLayout {
+                                        id: cardBody
                                         anchors.fill: parent
-                                        anchors.leftMargin: 10
-                                        anchors.rightMargin: 8
-                                        spacing: 8
+                                        anchors.margins: 8
+                                        spacing: 6
 
-                                        // Active Window Indicator Bar (Constant 16px height, highlighted color when active)
+                                        // The snapshot, or the application icon
+                                        // when there is none to show.
                                         Rectangle {
-                                            width: 3
-                                            height: 16
-                                            radius: 1.5
-                                            color: (cardItem.winData && cardItem.winData.active) ? Theme.accent : Qt.rgba(255/255, 255/255, 255/255, 0.22)
-                                            Layout.alignment: Qt.AlignVCenter
-
-                                            Behavior on color { ColorAnimation { duration: 120 } }
-                                        }
-
-                                        // Window Caption & Status Subtitle
-                                        ColumnLayout {
                                             Layout.fillWidth: true
-                                            Layout.alignment: Qt.AlignVCenter
-                                            spacing: 2
+                                            Layout.preferredHeight: Math.round(width * 9 / 16)
+                                            radius: 6
+                                            color: Qt.rgba(0, 0, 0, 0.35)
+                                            clip: true
 
-                                            Text {
-                                                id: cardCaptionText
-                                                text: cardItem.winData ? (cardItem.winData.caption || cardItem.winData.name || "Window") : ""
-                                                color: (cardItem.winData && cardItem.winData.active) ? Theme.accent : Theme.fg
-                                                font.pixelSize: Theme.fsBody
-                                                font.family: Theme.fontFamily
-                                                font.weight: (cardItem.winData && cardItem.winData.active) ? Font.Bold : Font.Medium
-                                                elide: Text.ElideRight
-                                                Layout.fillWidth: true
+                                            Image {
+                                                anchors.fill: parent
+                                                visible: cardItem.shotPath !== "" && status === Image.Ready
+                                                source: cardItem.shotPath !== "" ? "file://" + cardItem.shotPath : ""
+                                                fillMode: Image.PreserveAspectCrop
+                                                asynchronous: true
+                                                cache: false
+                                                smooth: true
                                             }
 
-                                            Text {
-                                                text: cardItem.winData ? ((cardItem.winData.active) ? "Active window" : (cardItem.winData.minimized ? "Minimized" : "Click to focus")) : ""
-                                                color: (cardItem.winData && cardItem.winData.active) ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.85) : Theme.comment
-                                                font.pixelSize: Theme.fsCaption
-                                                font.family: Theme.fontFamily
-                                                elide: Text.ElideRight
-                                                Layout.fillWidth: true
+                                            AppIcon {
+                                                anchors.centerIn: parent
+                                                width: 26
+                                                height: 26
+                                                visible: cardItem.shotPath === ""
+                                                source: root.getIconPath(root.previewTargetApp ? root.previewTargetApp.icon : "")
+                                                scaleHint: AppLauncherService.iconScale(root.previewTargetApp ? root.previewTargetApp.icon : "")
                                             }
                                         }
 
-                                        // Individual Window Close Button (✕)
+                                        Text {
+                                            id: cardCaptionText
+                                            Layout.fillWidth: true
+                                            text: cardItem.winData ? (cardItem.winData.caption || cardItem.winData.name || "Window") : ""
+                                            color: (cardItem.winData && cardItem.winData.active) ? Theme.fg : Qt.rgba(Theme.fg.r, Theme.fg.g, Theme.fg.b, 0.72)
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
+                                            font.weight: (cardItem.winData && cardItem.winData.active) ? Font.DemiBold : Font.Normal
+                                            elide: Text.ElideRight
+                                            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                                            maximumLineCount: 2
+                                            lineHeight: Theme.lhTight
+                                        }
+
+                                        // Only when there is something to say:
+                                        // "click to focus" was true of every card
+                                        // and told the reader nothing.
+                                        Text {
+                                            Layout.fillWidth: true
+                                            visible: text !== ""
+                                            text: (cardItem.winData && cardItem.winData.minimized) ? "Minimized" : ""
+                                            color: Theme.comment
+                                            font.pixelSize: Theme.fsCaption
+                                            font.family: Theme.fontFamily
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                        // Individual Window Close Button, in the
+                                        // corner of the frame now that the card
+                                        // is a column.
                                         Item {
                                             width: 22
                                             height: 22
                                             z: 10
-                                            Layout.alignment: Qt.AlignVCenter
+                                            anchors.top: parent.top
+                                            anchors.right: parent.right
+                                            anchors.margins: 6
+                                            visible: cardItem.cardHovered
 
                                             Rectangle {
                                                 anchors.fill: parent
@@ -825,7 +945,6 @@ Item {
                                                 }
                                             }
                                         }
-                                    }
                                 }
                             }
                         }
@@ -1037,20 +1156,62 @@ Item {
         }
     }
 
+    // Where each dock icon sits on the screen, for the minimize animation to
+    // aim at. The coordinates have to be global: they used to be mapped to
+    // this item, which is centred inside the dock window, so every icon
+    // reported a position a few pixels from the origin and the animation flew
+    // to the corner of the screen.
     Timer {
         id: geomTimer
         interval: 500
         running: true
         repeat: true
+
+        // The map only changes when an app opens, closes or is reordered, so
+        // most ticks have nothing to say. Sending anyway costs a KWin
+        // reconfigure twice a second.
+        property string lastSent: ""
+
         onTriggered: {
+            let win = root.dockWindow
+            if (!win || !win.screen) return;
+
+            // The dock window spans the width of its screen and sits on the
+            // bottom edge, so this is where its own origin is.
+            let originX = win.screen.x
+            let originY = win.screen.y + win.screen.height - win.height
+            // While the dock is hidden its icons are off the bottom of the
+            // screen; aiming at the edge keeps the animation on screen.
+            let floorY = win.screen.y + win.screen.height
+
+            function globalRect(item) {
+                // mapToItem(null, ...) is rejected here ("Insufficient
+                // arguments"), so the window's own content item is the frame
+                // of reference.
+                let pt = item.mapToItem(win.contentItem, 0, 0)
+                let w = Math.round(item.width)
+                let h = Math.round(item.height)
+                return {
+                    x: Math.round(originX + pt.x),
+                    y: Math.min(Math.round(originY + pt.y), Math.round(floorY - h)),
+                    width: w,
+                    height: h
+                }
+            }
+
             let map = {}
             for (let i = 0; i < dockRepeater.count; i++) {
                 let item = dockRepeater.itemAt(i)
                 if (item && item.appId) {
-                    let pt = item.mapToItem(root, 0, 0)
-                    map[item.appId.toLowerCase()] = { x: Math.round(pt.x), y: Math.round(pt.y) }
+                    map[item.appId.toLowerCase()] = globalRect(item)
                 }
             }
+            // Where a window with no icon of its own goes.
+            map["__dock__"] = globalRect(dockGlass)
+
+            let jsonStr = JSON.stringify(map)
+            if (jsonStr === geomTimer.lastSent) return;
+            geomTimer.lastSent = jsonStr
             TaskService.updateIconGeometries(map)
         }
     }

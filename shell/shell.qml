@@ -297,8 +297,19 @@ Scope {
         // While the context menu is open the pointer is usually over it (a
         // separate window), not over the dock, so the dock shouldn't hide
         // itself until the menu closes.
+        // The window picker and the context menu are both windows of their
+        // own, so the pointer moving onto either one reads as "left the dock"
+        // and used to slide the dock away under them.
         Connections {
             target: PopupService
+            function onPreviewOpenChanged() {
+                if (PopupService.previewOpen) {
+                    hideDockTimer.stop()
+                    dockWindow.revealed = true
+                } else if (!dockHover.hovered) {
+                    hideDockTimer.restart()
+                }
+            }
             function onDockMenuOpenChanged() {
                 if (PopupService.dockMenuOpen) {
                     hideDockTimer.stop()
@@ -313,7 +324,7 @@ Scope {
             id: hideDockTimer
             interval: 400
             onTriggered: {
-                if (!PopupService.dockMenuOpen) {
+                if (!PopupService.dockMenuOpen && !PopupService.previewOpen) {
                     dockWindow.revealed = false
                 }
             }
