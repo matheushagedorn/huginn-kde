@@ -57,11 +57,19 @@ Item {
     readonly property bool durationKnown: length > 0
     readonly property bool buffering: hasPlayer && !durationKnown
 
+    // Hours only when there are hours: a three-hour podcast used to read
+    // "148:10", and a three-minute song does not need a leading "0:".
     function formatTime(secs) {
         if (isNaN(secs) || secs <= 0) return "0:00"
-        var m = Math.floor(secs / 60)
-        var s = Math.floor(secs % 60)
-        return m + ":" + (s < 10 ? "0" : "") + s
+        var total = Math.floor(secs)
+        var h = Math.floor(total / 3600)
+        var m = Math.floor((total % 3600) / 60)
+        var s = total % 60
+        var ss = (s < 10 ? "0" : "") + s
+        if (h > 0) {
+            return h + ":" + (m < 10 ? "0" : "") + m + ":" + ss
+        }
+        return m + ":" + ss
     }
 
     function getDisplayName(name) {
