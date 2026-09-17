@@ -69,6 +69,12 @@ function updateWindows() {
         if (w.fullScreen && (w.active || w === activeWin)) {
             isFullscreen = true;
         }
+        // skipTaskbar is what a surface sets when it is infrastructure and not
+        // an application: panels, OSDs, and the anchor surface that
+        // minimize_geometry_service maps so KWin has something to resolve the
+        // dock's icon rectangles against. Without this the dock grew an icon
+        // for its own helper.
+        if (w.skipTaskbar) continue;
         if (w.normalWindow || w.fullScreen || w.managed) {
             var cls = (w.desktopFileName || w.resourceClass || w.resourceName || "").toLowerCase();
             if (!cls && w.caption) cls = w.caption.toLowerCase();

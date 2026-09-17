@@ -1,33 +1,37 @@
 #!/usr/bin/env python3
-import sys
-import os
-import json
-import subprocess
+"""Publish the dock's icon rectangles for the minimize animation.
 
-JS_TEMPLATE_PATH = os.path.expanduser('~/.config/huginn/services/js/update_icon_geometries.js')
+This used to load a KWin script that called win.setMinimizeIconGeometry().
+None of it ever ran: that method does not exist in KWin 6's scripting API,
+Qt.rect is undefined in that context, and Window::iconGeometry is read-only.
+On Wayland the rectangles can only reach KWin through
+org_kde_plasma_window_management, which minimize_geometry_service.py speaks.
+
+So the dock writes them here and that service picks them up. The write is
+atomic because the service watches the file's timestamp and would otherwise
+read a half-written map.
+"""
+import json
+import os
+import sys
+
+CACHE_DIR = os.path.expanduser('~/.cache/huginn')
+ICON_MAP_PATH = os.path.join(CACHE_DIR, 'icon_geometry.json')
+
 
 def update_geometries(geom_json_str):
     try:
-        with open(JS_TEMPLATE_PATH, 'r', encoding='utf-8') as f:
-            template = f.read()
-
-        script = template.replace('%ICON_MAP_JSON%', geom_json_str)
-        
-        target_js = '/tmp/kwin_update_geometries.js'
-        with open(target_js, 'w', encoding='utf-8') as f:
-            f.write(script)
-
-        res = subprocess.check_output(
-            ['busctl', '--user', 'call', 'org.kde.KWin', '/Scripting', 'org.kde.kwin.Scripting', 'loadScript', 's', target_js],
-            text=True, stderr=subprocess.DEVNULL
-        )
-        sid = res.strip().split()[-1]
-        subprocess.check_output(['busctl', '--user', 'call', 'org.kde.KWin', f'/Scripting/Script{sid}', 'org.kde.kwin.Script', 'run'], text=True, stderr=subprocess.DEVNULL)
-        subprocess.check_output(['busctl', '--user', 'call', 'org.kde.KWin', f'/Scripting/Script{sid}', 'org.kde.kwin.Script', 'stop'], text=True, stderr=subprocess.DEVNULL)
+        # Parsed and re-serialised so a broken map never reaches the service.
+        data = json.loads(geom_json_str)
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        tmp_path = ICON_MAP_PATH + '.tmp'
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f)
+        os.replace(tmp_path, ICON_MAP_PATH)
     except Exception:
         pass
 
+
 if __name__ == '__main__':
     if len(sys.argv) >= 2:
-        geom_json_str = sys.argv[1]
-        update_geometries(geom_json_str)
+        update_geometries(sys.argv[1])

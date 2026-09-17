@@ -170,6 +170,71 @@ deploy_kde_colorschemes() {
     success "Color schemes installed."
 }
 
+# The window switcher is a KWin package, not part of the shell, so it is copied
+# out instead of linked: KWin reads it from ~/.local/share/kwin/ only. Its
+# colours live in HuginnPalette.qml, which theme_sync.py rewrites.
+deploy_kwin_packages() {
+    info "Installing the Huginn KWin packages..."
+
+    if [ -d "$SCRIPT_DIR/shell/tabbox/huginn" ]; then
+        local switcher="$DATA_DIR/kwin/tabbox/huginn"
+        mkdir -p "$switcher"
+        cp -r "$SCRIPT_DIR/shell/tabbox/huginn/." "$switcher/"
+        kwriteconfig6 --file kwinrc --group TabBox --key LayoutName huginn
+        # 1 = only the windows of the current desktop.
+        kwriteconfig6 --file kwinrc --group TabBox --key DesktopMode 1
+        success "Window switcher installed."
+    fi
+
+    qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+}
+
+# Two things the shell cannot do as an ordinary Wayland client, and one binary
+# that can do both.
+#
+# The minimize animation aims at Window::iconGeometry, which on Wayland only a
+# task manager can fill in, through org_kde_plasma_window_management. The
+# window picker shows a frame of each window, which no client can read on its
+# own either; org.kde.KWin.ScreenShot2 hands one over on request.
+#
+# KWin 6 gives a restricted protocol only to an executable whose .desktop file
+# asks for it by name (fetchRequestedInterfaces in KWin's wayland_server.cpp,
+# matching the first word of Exec), and the D-Bus interface works the same way
+# -- Spectacle's own .desktop is the reference.
+#
+# That is why the helper gets a private copy of the interpreter: a .desktop
+# pointing at /usr/bin/python3 would hand both -- the title of every window in
+# the session, the power to close them, and the pixels of any of them -- to
+# every Python program the user runs. Scoped this way, only this binary can ask.
+#
+# The copy is refreshed on every start by the unit, so a Python upgrade cannot
+# leave a launcher behind that no longer finds its library.
+deploy_shell_helper() {
+    info "Installing the privileged shell helper..."
+    local helper_bin="$HOME/.local/bin/huginn-shell-helper"
+    local desktop_file="$HOME/.local/share/applications/org.huginn.shell-helper.desktop"
+
+    install -Dm755 "$(command -v python3)" "$helper_bin"
+    mkdir -p "$(dirname "$desktop_file")"
+    cat > "$desktop_file" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Huginn shell helper
+NoDisplay=true
+Exec=$helper_bin
+X-KDE-Wayland-Interfaces=org_kde_plasma_window_management
+X-KDE-DBUS-Restricted-Interfaces=org.kde.KWin.ScreenShot2
+EOF
+    # KWin looks the .desktop up through KService, which reads the sycoca cache.
+    kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+
+    warn "$helper_bin may now read the window list of the session and capture window images."
+
+    # The lamp is what aims at those rectangles.
+    kwriteconfig6 --file kwinrc --group Plugins --key magiclampEnabled true
+    qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
+}
+
 # Wallpapers are not shipped with Huginn. Each theme variant looks for a folder
 # named after it under ~/Pictures/Wallpapers, and falls back to whatever the
 # scanner finds there. This only creates the folder and says what to put in it.
@@ -398,6 +463,26 @@ Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:%h
 WantedBy=graphical-session.target
 EOF
 
+    # Feeds KWin the dock's icon rectangles so the minimize animation has a
+    # target; see deploy_shell_helper for why it runs through a private copy of
+    # the interpreter instead of /usr/bin/python3.
+    cat > "$service_dir/huginn-minimize-geometry.service" <<EOF
+[Unit]
+Description=Huginn minimize geometry
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/install -Dm755 /usr/bin/python3 %h/.local/bin/huginn-shell-helper
+ExecStart=%h/.local/bin/huginn-shell-helper %h/.config/huginn/services/python/minimize_geometry_service.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
+EOF
+
     # Session restore has to wait for the bar to exist.
     #
     # KWin restores last session's windows about 350ms before the shell finishes
@@ -423,12 +508,12 @@ EOF
     done
 
     systemctl --user daemon-reload
-    for unit in huginn.service huginn-recolor-watcher.service; do
+    for unit in huginn.service huginn-recolor-watcher.service huginn-minimize-geometry.service; do
         systemctl --user enable "$unit" >/dev/null 2>&1 || warn "Could not enable $unit automatically."
         systemctl --user restart "$unit" || warn "Could not start $unit automatically."
     done
 
-    success "Services configured (huginn.service, huginn-recolor-watcher.service)."
+    success "Services configured (huginn.service, huginn-recolor-watcher.service, huginn-minimize-geometry.service)."
 }
 
 # ------------------------------------------------------------------------------
@@ -467,6 +552,8 @@ verify_dependencies
 setup_icon_theme
 deploy_configs
 deploy_kde_colorschemes
+deploy_kwin_packages
+deploy_shell_helper
 deploy_wallpapers
 clean_legacy_names
 setup_helper_scripts
