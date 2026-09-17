@@ -81,12 +81,17 @@ def capture(uuid):
         # reusing one path would show the previous frame forever. The older
         # frames of this window go with it.
         safe = ''.join(c for c in uuid if c.isalnum() or c in '-_')
+        cutoff = time.time() - 3600
         for stale in os.listdir(CACHE_DIR):
-            if stale.startswith(safe):
-                try:
-                    os.remove(os.path.join(CACHE_DIR, stale))
-                except OSError:
-                    pass
+            stale_path = os.path.join(CACHE_DIR, stale)
+            # This window's earlier frames, and anything left behind by a window
+            # that has since been closed -- nothing here is worth keeping, since
+            # the picker captures again every time it opens.
+            try:
+                if stale.startswith(safe) or os.path.getmtime(stale_path) < cutoff:
+                    os.remove(stale_path)
+            except OSError:
+                pass
         path = os.path.join(CACHE_DIR, f'{safe}-{time.monotonic_ns() // 1000000}.png')
         tmp_path = path + '.tmp'
         image.save(tmp_path, 'PNG')
