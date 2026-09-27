@@ -16,6 +16,8 @@ Item {
     // Active Context Menu State
     property var contextTargetApp: null
     property int contextTargetX: 0
+    // The icon that was right-clicked, for the menu to grow out of.
+    property Item contextTargetItem: null
 
     function getParabolicScale(itemIndex, hoveredIndex) {
         if (hoveredIndex < 0) return 1.0;
@@ -329,10 +331,15 @@ Item {
                                 PopupService.closeAll()
 
                                 if (!isSameApp) {
-                                    root.contextTargetApp = modelData
+                                    // Where the menu goes is settled before
+                                    // the app is set: setting it opens the
+                                    // menu, and the menu takes its origin
+                                    // from this icon as it opens.
                                     let targetParent = root.dockWindow ? root.dockWindow.contentItem : root
                                     let posInWindow = itemMouse.mapToItem(targetParent, 0, 0).x
                                     root.contextTargetX = Math.round(posInWindow)
+                                    root.contextTargetItem = dockItem
+                                    root.contextTargetApp = modelData
 
                                     dockContextMenu.visible = true
                                     PopupService.dockMenuOpen = true
@@ -1022,49 +1029,14 @@ Item {
         implicitWidth: 160
         implicitHeight: 140
 
-        property real animProgress: 0.0
-
-        NumberAnimation on animProgress {
-            id: dockMenuPopIn
-            running: false
-            to: 1.0
-            duration: 220
-            easing.type: Easing.OutBack
-            easing.overshoot: 1.15
-        }
-
-        NumberAnimation on animProgress {
-            id: dockMenuPopOut
-            running: false
-            to: 0.0
-            duration: 160
-            easing.type: Easing.InQuad
-            onFinished: dockContextMenu.visible = false
-        }
-
-        Connections {
-            target: PopupService
-            function onDockMenuOpenChanged() {
-                if (PopupService.dockMenuOpen) {
-                    dockMenuPopOut.running = false
-                    dockContextMenu.visible = true
-                    dockMenuPopIn.restart()
-                } else if (dockContextMenu.visible) {
-                    dockMenuPopIn.running = false
-                    dockMenuPopOut.restart()
-                }
-            }
-        }
-
-        GlassPanel {
+        MorphPanel {
             id: dockCtxGlass
+            popup: dockContextMenu
+            trigger: root.contextTargetItem
+            open: PopupService.dockMenuOpen
             implicitWidth: 160
             implicitHeight: 140
             anchors.fill: parent
-
-            opacity: dockContextMenu.animProgress
-            scale: 0.90 + 0.10 * dockContextMenu.animProgress
-            transformOrigin: Item.BottomLeft
 
             ColumnLayout {
                 id: ctxCol
