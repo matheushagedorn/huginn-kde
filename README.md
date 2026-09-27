@@ -78,6 +78,7 @@ into System Settings by hand:
 | Key | Script |
 |---|---|
 | Meta | `huginn-launcher` |
+| Meta+W | `huginn-overview` (takes the key from KWin's Overview) |
 | Volume Up / Down / Mute | `huginn-volume-up` / `-down` / `-mute` |
 | unbound | `huginn-lock` |
 

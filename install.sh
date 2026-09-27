@@ -259,6 +259,7 @@ HELPERS=(
     "huginn-volume-down:quickshell -p \"$HOME/.config/huginn\" ipc call volume decrease"
     "huginn-volume-mute:quickshell -p \"$HOME/.config/huginn\" ipc call volume mute"
     "huginn-launcher:quickshell -p \"$HOME/.config/huginn\" ipc call launcher toggle"
+    "huginn-overview:quickshell -p \"$HOME/.config/huginn\" ipc call overview toggle"
     "huginn-lock:touch /tmp/huginn_lock_trigger 2>/dev/null || true; loginctl lock-session"
 )
 
@@ -289,16 +290,23 @@ SHORTCUTS=(
     "huginn-volume-down:Volume Down:Volume Down"
     "huginn-volume-mute:Volume Mute:Mute"
     "huginn-launcher:Meta:App Launcher"
+    "huginn-overview:Meta+W:Window Overview"
     "huginn-lock::"
 )
 
-# Plasma claims these keys through its own kmix component. Two components on one
-# key and neither answers reliably, so kmix gives them up. The second field of
-# the value is the default binding, kept so System Settings can still restore it.
+# Plasma claims these keys through its own components. Two components on one
+# key and neither answers reliably, so Plasma's gives them up. The second field
+# of the value is the default binding, kept so System Settings can still
+# restore it.
+#
+# Meta+W is KWin's own Overview effect, which the shell's overview replaces:
+# the same key, so muscle memory carries over, and KWin's desktop grid stays on
+# Meta+G for when the virtual desktops themselves are the point.
 CONFLICTS=(
     "kmix:increase_volume:Volume Up:Increase Volume"
     "kmix:decrease_volume:Volume Down:Decrease Volume"
     "kmix:mute:Volume Mute:Mute"
+    "kwin:Overview:Meta+W:Toggle Overview"
 )
 
 release_conflicting_shortcuts() {
