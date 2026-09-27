@@ -5,10 +5,12 @@ import Quickshell.Io
 
 // Real-time audio spectrum, read from cava's raw ASCII output.
 //
-// The meter under the media card is functional, not decoration — it follows
-// actual output amplitude. It only exists when cava does: `available` gates
-// the whole widget, so a machine without cava gets no dead flat line
-// promising a visualisation that can never move.
+// The meter under the media card, and the slim one behind the title in the
+// bar's media island, are functional, not decoration — they follow actual
+// output amplitude. Both read this one stream, so there is only ever one cava
+// process, and it runs only while something is playing. They only exist when
+// cava does: `available` gates them, so a machine without cava gets no dead
+// flat line promising a visualisation that can never move.
 Item {
     id: root
 
