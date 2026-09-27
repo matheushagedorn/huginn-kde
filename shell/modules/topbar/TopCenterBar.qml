@@ -176,49 +176,14 @@ GlassPanel {
         implicitWidth: calendarGlass.implicitWidth
         implicitHeight: calendarGlass.implicitHeight
 
-        property real animProgress: 0.0
-
-        NumberAnimation on animProgress {
-            id: calPopIn
-            running: false
-            to: 1.0
-            duration: 220
-            easing.type: Easing.OutBack
-            easing.overshoot: 1.15
-        }
-
-        NumberAnimation on animProgress {
-            id: calPopOut
-            running: false
-            to: 0.0
-            duration: 160
-            easing.type: Easing.InQuad
-            onFinished: timeMenu.visible = false
-        }
-
-        Connections {
-            target: PopupService
-            function onCalendarMenuOpenChanged() {
-                if (PopupService.calendarMenuOpen) {
-                    calPopOut.running = false
-                    timeMenu.visible = true
-                    calPopIn.restart()
-                } else if (timeMenu.visible) {
-                    calPopIn.running = false
-                    calPopOut.restart()
-                }
-            }
-        }
-
-        GlassPanel {
+        MorphPanel {
             id: calendarGlass
+            popup: timeMenu
+            trigger: timeBtn
+            open: PopupService.calendarMenuOpen
             implicitWidth: dashboard.implicitWidth + 32
             implicitHeight: dashboard.implicitHeight + 28
             anchors.fill: parent
-
-            opacity: timeMenu.animProgress
-            scale: 0.90 + 0.10 * timeMenu.animProgress
-            transformOrigin: Item.Top
 
             Dashboard {
                 id: dashboard
@@ -240,42 +205,11 @@ GlassPanel {
         implicitWidth: playerGlass.implicitWidth
         implicitHeight: playerGlass.implicitHeight
 
-        property real animProgress: 0.0
-
-        NumberAnimation on animProgress {
-            id: mediaPopIn
-            running: false
-            to: 1.0
-            duration: 220
-            easing.type: Easing.OutBack
-            easing.overshoot: 1.15
-        }
-
-        NumberAnimation on animProgress {
-            id: mediaPopOut
-            running: false
-            to: 0.0
-            duration: 160
-            easing.type: Easing.InQuad
-            onFinished: mediaMenu.visible = false
-        }
-
-        Connections {
-            target: PopupService
-            function onMediaMenuOpenChanged() {
-                if (PopupService.mediaMenuOpen) {
-                    mediaPopOut.running = false
-                    mediaMenu.visible = true
-                    mediaPopIn.restart()
-                } else if (mediaMenu.visible) {
-                    mediaPopIn.running = false
-                    mediaPopOut.restart()
-                }
-            }
-        }
-
-        GlassPanel {
+        MorphPanel {
             id: playerGlass
+            popup: mediaMenu
+            trigger: mediaBtn
+            open: PopupService.mediaMenuOpen
             implicitWidth: 260
 
             // The spectrum gets its own band at the foot of the card. It used
@@ -286,10 +220,6 @@ GlassPanel {
 
             implicitHeight: playerLayout.implicitHeight + Theme.sp5 + spectrumBand
             anchors.fill: parent
-
-            opacity: mediaMenu.animProgress
-            scale: 0.90 + 0.10 * mediaMenu.animProgress
-            transformOrigin: Item.Top
 
             // Output spectrum, in its own band along the bottom edge.
             // Driven by cava; hidden entirely when cava is not installed so

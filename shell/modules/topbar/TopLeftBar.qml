@@ -88,42 +88,11 @@ GlassPanel {
         implicitWidth: contentGlass.implicitWidth
         implicitHeight: contentGlass.implicitHeight
 
-        property real animProgress: 0.0
-
-        NumberAnimation on animProgress {
-            id: sessPopIn
-            running: false
-            to: 1.0
-            duration: 220
-            easing.type: Easing.OutBack
-            easing.overshoot: 1.15
-        }
-
-        NumberAnimation on animProgress {
-            id: sessPopOut
-            running: false
-            to: 0.0
-            duration: 160
-            easing.type: Easing.InQuad
-            onFinished: sessionMenu.visible = false
-        }
-
-        Connections {
-            target: PopupService
-            function onSessionMenuOpenChanged() {
-                if (PopupService.sessionMenuOpen) {
-                    sessPopOut.running = false
-                    sessionMenu.visible = true
-                    sessPopIn.restart()
-                } else if (sessionMenu.visible) {
-                    sessPopIn.running = false
-                    sessPopOut.restart()
-                }
-            }
-        }
-
-        GlassPanel {
+        MorphPanel {
             id: contentGlass
+            popup: sessionMenu
+            trigger: sessionBtn
+            open: PopupService.sessionMenuOpen
             // Fixed width: the rows fill it, so nothing in the layout drives
             // an intrinsic width, and a menu reads better when its items share
             // one hit area than when it hugs the longest label.
@@ -131,10 +100,6 @@ GlassPanel {
             // + 8 for the inset GlassPanel puts around its own children.
             implicitHeight: menuLayout.implicitHeight + Theme.sp2 + 8
             anchors.fill: parent
-
-            opacity: sessionMenu.animProgress
-            scale: 0.90 + 0.10 * sessionMenu.animProgress
-            transformOrigin: Item.TopLeft
 
             ColumnLayout {
                 id: menuLayout
