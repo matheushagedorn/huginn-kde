@@ -11,6 +11,7 @@ import "modules/notifications"
 import "modules/desktop"
 import "modules/lockscreen"
 import "modules/osd"
+import "modules/overview"
 import "services"
 import "theme"
 
@@ -44,6 +45,11 @@ Scope {
         function toggle() {
             TaskService.toggleLauncher()
         }
+    }
+
+    IpcHandler {
+        target: "overview"
+        function toggle() { overview.toggle() }
     }
 
     IpcHandler {
@@ -433,6 +439,9 @@ Scope {
     // window on purpose: see LauncherDim.
     LauncherDim { progress: appLauncher.openProgress }
     AppLauncher { id: appLauncher }
+
+    // Every window of the current desktop at once, one card each.
+    Overview { id: overview }
 
     // Bottom-Right Notification Toast Overlay
     NotificationToast { screen: primaryScreen }
