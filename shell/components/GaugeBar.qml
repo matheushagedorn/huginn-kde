@@ -14,6 +14,9 @@ Item {
     property real value: 0                       // 0..100
     property color fillColor: Theme.accent
     property int thickness: 6
+    // The track is the panel ground inside a popup; on the bare wallpaper a
+    // solid slab of it would read as a window, so the caller can soften it.
+    property color trackColor: Theme.bg
 
     Layout.fillWidth: true
     implicitHeight: thickness
@@ -24,7 +27,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         height: bar.thickness
         radius: height / 2
-        color: Theme.bg
+        color: bar.trackColor
         clip: true
 
         Rectangle {

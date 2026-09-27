@@ -20,9 +20,9 @@ Item {
     implicitWidth: 560
     implicitHeight: content.implicitHeight
 
-    // The system readings, as one row each. The desktop cards carry the
-    // detail; here a name, a bar and a number are enough to answer "is
-    // anything on fire".
+    // The system readings, as one row each. The desktop strip carries the
+    // detail, one reading at a time on hover; here a name, a bar and a
+    // number are enough to answer "is anything on fire".
     component Reading: RowLayout {
         id: reading
         property string label: ""

@@ -6,12 +6,22 @@ import "../../theme"
 import "../../services"
 import "../../components"
 
-// Desktop system monitor: four cards on one 2x2 grid.
+// Desktop system monitor: one quiet column in the top-left corner.
 //
-// Each card says the same things in the same order, because they all come
-// from MonitorCard: what is being watched, the one reading that names its
-// state, the device behind it, a usage bar, the detail rows, and the history
-// graph on the bottom edge. Anything a card wants to add goes in `content`.
+// It used to be four framed cards on a 2x2 grid, each with a heading, a
+// device name, a bar, two to four rows and a graph. That is a lot of chrome
+// for something glanced at, and against the wallpaper it read as a stack of
+// windows. What is left at rest is one line per reading: label, number,
+// trace. No frames, muted text, and colour only when a threshold is crossed,
+// so a calm machine is nearly invisible and a hot one is not.
+//
+// Nothing was dropped. Resting the pointer on a reading unfolds it in place
+// with everything its card used to carry (see AmbientMetric), and the
+// Dashboard under the clock still has the four headline bars.
+//
+// Only hardware the machine has is shown: no GPU line without a GPU that
+// answered, no fan without a fan sensor, no Wi-Fi without a wireless
+// interface, no drive temperature without a sensor reporting it.
 PanelWindow {
     id: widgetWindow
 
@@ -19,12 +29,14 @@ PanelWindow {
         top: true
         left: true
     }
-    // Lined up with the bar, not with the screen: the bar floats 10px in from
-    // the left, so cards indented by 20 left a step between the two edges.
-    // The top is the bar's own bottom edge (10 + barHeight) plus a gap of its
-    // own, which the old 55 did not leave: the cards were touching it.
+    // Under the bar and flush with its left edge. The text itself sits a
+    // small step further in (AmbientMetric's own padding), which is where the
+    // hover backdrop needs its margin and where the bar's first capsule
+    // keeps its content, so the two columns read as one.
+    // The gap below the bar is wider than a popup's: this is not attached
+    // to the bar, and should not look like it hangs from it.
     margins {
-        top: 10 + Theme.barHeight + Theme.sp4
+        top: 10 + Theme.barHeight + Theme.sp5
         left: 10
     }
 
@@ -34,135 +46,152 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
 
-    mask: Region {}
+    // Input only where the readings are, so the rest of the window, which is
+    // sized for the tallest reading opened, never swallows a desktop click.
+    mask: Region { item: strip }
 
-    implicitWidth: mainCol.implicitWidth
-    implicitHeight: mainCol.implicitHeight
+    // The window does not follow the unfolding reading: resizing a layer
+    // surface on every animation frame is what makes it stutter. It is sized
+    // once for every reading at rest plus the tallest one open.
+    readonly property var metrics: [cpu, gpu, ram, net, disk].filter(m => m.visible)
+    implicitWidth: 240
+    implicitHeight: {
+        let rest = 0
+        let open = 0
+        for (let m of metrics) {
+            rest += m.restHeight
+            open = Math.max(open, m.detailHeight)
+        }
+        return rest + open + Math.max(0, metrics.length - 1) * strip.spacing
+    }
+
+    // Warning and critical lines for each reading. Load uses the scale of
+    // Theme.loadColor and temperature the one of Theme.tempColor; memory
+    // warns later, because a desktop sitting at 60% RAM is just a desktop
+    // with a browser open, and a disk later still, because full is not busy.
+    function levelOf(v, warn, crit) {
+        return v >= crit ? 2 : v >= warn ? 1 : 0
+    }
+
+    readonly property int cpuTempLevel: levelOf(SystemMonitorService.cpuTemp, 75, 85)
+    readonly property int gpuTempLevel: levelOf(SystemMonitorService.gpuTemp, 75, 85)
+    readonly property int nvmeTempLevel: levelOf(SystemMonitorService.nvmeTemp, 60, 70)
+    readonly property int swapLevel: levelOf(SystemMonitorService.swapPct, 20, 60)
+
+    // A temperature that is the reason for the colour gets named next to the
+    // number; otherwise the number would turn red with nothing on screen to
+    // say why.
+    function tempFlag(level, deg) {
+        return level > 0 ? Math.round(deg) + "°" : ""
+    }
 
     ColumnLayout {
-        id: mainCol
-        spacing: Theme.sp3
-        implicitWidth: 640
+        id: strip
+        width: widgetWindow.implicitWidth
+        spacing: 0
 
-        RowLayout {
+        AmbientMetric {
+            id: cpu
             Layout.fillWidth: true
-            spacing: Theme.sp3
-
-            MonitorCard {
-                title: "CPU"
-                headline: SystemMonitorService.cpuPct + "%"
-                subtitle: SystemMonitorService.cpuName
-                gaugeValue: SystemMonitorService.cpuPct
-                gaugeColor: Theme.loadColor(SystemMonitorService.cpuPct)
-                history: SystemMonitorService.cpuHistory
-
-                content: [
-                    MetricRow {
-                        label: "Temp"
-                        value: SystemMonitorService.cpuTemp + "°C"
-                        valueColor: Theme.tempColor(SystemMonitorService.cpuTemp)
-                        trailingLabel: "Fan"
-                        trailingValue: SystemMonitorService.cpuFan > 0
-                            ? SystemMonitorService.cpuFan + " RPM"
-                            : "Auto"
-                    },
-                    MetricRow {
-                        label: "Clock"
-                        value: SystemMonitorService.cpuFreq
-                        trailingLabel: "Cores"
-                        trailingValue: String(SystemMonitorService.cpuCores)
-                    }
+            label: "CPU"
+            value: SystemMonitorService.cpuPct + "%"
+            flag: widgetWindow.tempFlag(widgetWindow.cpuTempLevel, SystemMonitorService.cpuTemp)
+            level: Math.max(widgetWindow.levelOf(SystemMonitorService.cpuPct, 60, 85), widgetWindow.cpuTempLevel)
+            history: SystemMonitorService.cpuHistory
+            subtitle: SystemMonitorService.cpuName
+            details: {
+                let rows = [
+                    { label: "Temperature", value: SystemMonitorService.cpuTemp + "°C", level: widgetWindow.cpuTempLevel },
+                    { label: "Clock", value: SystemMonitorService.cpuFreq },
+                    { label: "Cores", value: String(SystemMonitorService.cpuCores) }
                 ]
-            }
-
-            MonitorCard {
-                title: "GPU"
-                headline: SystemMonitorService.gpuPct + "%"
-                subtitle: SystemMonitorService.gpuName
-                gaugeValue: SystemMonitorService.gpuPct
-                gaugeColor: Theme.loadColor(SystemMonitorService.gpuPct)
-                history: SystemMonitorService.gpuHistory
-
-                content: [
-                    MetricRow {
-                        label: "Temp"
-                        value: SystemMonitorService.gpuTemp + "°C"
-                        valueColor: Theme.tempColor(SystemMonitorService.gpuTemp)
-                        trailingLabel: "Power"
-                        trailingValue: SystemMonitorService.gpuPower
-                    },
-                    MetricRow {
-                        label: "VRAM"
-                        value: SystemMonitorService.gpuVramUsed + " / " + SystemMonitorService.gpuVramTotal + " MB"
-                    }
-                ]
+                if (SystemMonitorService.cpuFan > 0)
+                    rows.push({ label: "Fan", value: SystemMonitorService.cpuFan + " RPM" })
+                return rows
             }
         }
 
-        RowLayout {
+        AmbientMetric {
+            id: gpu
             Layout.fillWidth: true
-            spacing: Theme.sp3
-
-            MonitorCard {
-                title: "Memory"
-                headline: SystemMonitorService.ramPct + "%"
-                subtitle: SystemMonitorService.ramTotal + " GB installed"
-                gaugeValue: SystemMonitorService.ramPct
-                gaugeColor: Theme.loadColor(SystemMonitorService.ramPct)
-                history: SystemMonitorService.ramHistory
-
-                content: [
-                    MetricRow {
-                        label: "Used"
-                        value: SystemMonitorService.ramUsed + " / " + SystemMonitorService.ramTotal + " GB"
-                    },
-                    // Swap reads as a second memory with its own bar, and the
-                    // row under it says what the bar just showed.
-                    GaugeBar {
-                        value: SystemMonitorService.swapPct
-                        fillColor: Theme.loadColor(SystemMonitorService.swapPct, 20, 60)
-                        Layout.preferredHeight: Theme.cardSlot
-                    },
-                    MetricRow {
-                        label: "Swap"
-                        value: SystemMonitorService.swapUsed + " / " + SystemMonitorService.swapTotal + " GB"
-                    }
+            visible: SystemMonitorService.hasGpu
+            label: "GPU"
+            value: SystemMonitorService.gpuPct + "%"
+            flag: widgetWindow.tempFlag(widgetWindow.gpuTempLevel, SystemMonitorService.gpuTemp)
+            level: Math.max(widgetWindow.levelOf(SystemMonitorService.gpuPct, 60, 85), widgetWindow.gpuTempLevel)
+            history: SystemMonitorService.gpuHistory
+            subtitle: SystemMonitorService.gpuName
+            details: {
+                let rows = [
+                    { label: "Temperature", value: SystemMonitorService.gpuTemp + "°C", level: widgetWindow.gpuTempLevel },
+                    { label: "Power", value: SystemMonitorService.gpuPower },
+                    { label: "VRAM", value: SystemMonitorService.gpuVramUsed + " / " + SystemMonitorService.gpuVramTotal + " MB" }
                 ]
+                if (SystemMonitorService.gpuFan > 0)
+                    rows.push({ label: "Fan", value: SystemMonitorService.gpuFan + " RPM" })
+                return rows
             }
+        }
 
-            MonitorCard {
-                title: "Storage and network"
-                headline: SystemMonitorService.diskPct + "%"
-                subtitle: SystemMonitorService.diskName
-                gaugeValue: SystemMonitorService.diskPct
-                // A disk is not busy at 60% full the way a CPU is busy at 60%
-                // load, so this reading warns later than the others.
-                gaugeColor: Theme.loadColor(SystemMonitorService.diskPct, 80, 92)
-                history: SystemMonitorService.netHistory
-                // Throughput has no ceiling to draw against.
-                graphAutoScale: true
-
-                content: [
-                    MetricRow {
-                        label: "Temp"
-                        value: SystemMonitorService.nvmeTemp + "°C"
-                        valueColor: Theme.tempColor(SystemMonitorService.nvmeTemp, 60, 70)
-                        trailingLabel: "Used"
-                        trailingValue: SystemMonitorService.diskUsed + " / " + SystemMonitorService.diskTotal + " GB"
-                    },
-                    MetricRow {
-                        label: SystemMonitorService.hasWifi ? "Wi-Fi" : "Ethernet"
-                        value: SystemMonitorService.hasWifi
-                            ? SystemMonitorService.wifiSignal
-                            : (NetworkService.ethernetConnected ? "Connected" : "Disconnected")
-                    },
-                    MetricRow {
-                        label: "Down"
-                        value: SystemMonitorService.netRx
-                        trailingLabel: "Up"
-                        trailingValue: SystemMonitorService.netTx
-                    }
+        AmbientMetric {
+            id: ram
+            Layout.fillWidth: true
+            label: "RAM"
+            value: SystemMonitorService.ramPct + "%"
+            level: widgetWindow.levelOf(SystemMonitorService.ramPct, 75, 90)
+            history: SystemMonitorService.ramHistory
+            subtitle: SystemMonitorService.ramTotal + " GB installed"
+            details: {
+                let rows = [
+                    { label: "Used", value: SystemMonitorService.ramUsed + " / " + SystemMonitorService.ramTotal + " GB" }
                 ]
+                if (SystemMonitorService.swapTotal > 0)
+                    rows.push({ label: "Swap", value: SystemMonitorService.swapUsed + " / " + SystemMonitorService.swapTotal + " GB", level: widgetWindow.swapLevel })
+                return rows
+            }
+        }
+
+        AmbientMetric {
+            id: net
+            Layout.fillWidth: true
+            label: "NET"
+            // Download is the direction a desktop mostly waits on; upload is
+            // one line down when the reading is open.
+            value: SystemMonitorService.netRx
+            history: SystemMonitorService.netHistory
+            // Throughput has no ceiling to draw against.
+            autoScale: true
+            details: {
+                let rows = [
+                    { label: "Down", value: SystemMonitorService.netRx },
+                    { label: "Up", value: SystemMonitorService.netTx }
+                ]
+                if (SystemMonitorService.hasWifi)
+                    rows.push({ label: "Wi-Fi signal", value: SystemMonitorService.wifiSignal })
+                if (NetworkService.hasEthernet)
+                    rows.push({ label: "Ethernet", value: NetworkService.ethernetConnected ? "Connected" : "Disconnected" })
+                return rows
+            }
+        }
+
+        AmbientMetric {
+            id: disk
+            Layout.fillWidth: true
+            label: "DISK"
+            value: SystemMonitorService.diskPct + "%"
+            flag: widgetWindow.tempFlag(widgetWindow.nvmeTempLevel, SystemMonitorService.nvmeTemp)
+            level: Math.max(widgetWindow.levelOf(SystemMonitorService.diskPct, 80, 92), widgetWindow.nvmeTempLevel)
+            // How full a disk is barely moves in a minute, so a history of it
+            // would be a flat line; the slot shows the fill instead.
+            fill: SystemMonitorService.diskPct
+            subtitle: SystemMonitorService.diskName
+            details: {
+                let rows = [
+                    { label: "Used", value: SystemMonitorService.diskUsed + " / " + SystemMonitorService.diskTotal + " GB" }
+                ]
+                if (SystemMonitorService.nvmeTemp > 0)
+                    rows.push({ label: "Temperature", value: SystemMonitorService.nvmeTemp + "°C", level: widgetWindow.nvmeTempLevel })
+                return rows
             }
         }
     }

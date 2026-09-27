@@ -7,12 +7,24 @@ Item {
     property color barColor: Theme.accent
     property int maxVal: 100
     property bool autoScale: true
+    // The desktop strip draws these a few pixels tall and wants them to sit
+    // back in the wallpaper, so the stroke and the wash under it are the
+    // caller's to thin out. The defaults are the old card look.
+    property real lineWidth: 1.8
+    property real fillOpacity: 0.40
+    // Headroom above the peak and below zero, so the stroke is not clipped
+    // by the edge. Three pixels of a 34px card graph is nothing; of a 16px
+    // strip graph it is most of the height.
+    property real inset: 3
 
     implicitHeight: 30
     implicitWidth: 140
 
     onHistoryDataChanged: canvas.requestPaint()
     onBarColorChanged: canvas.requestPaint()
+    onLineWidthChanged: canvas.requestPaint()
+    onFillOpacityChanged: canvas.requestPaint()
+    onInsetChanged: canvas.requestPaint()
     onWidthChanged: canvas.requestPaint()
     onHeightChanged: canvas.requestPaint()
 
@@ -41,7 +53,7 @@ Item {
 
             // Background Area Gradient under curve
             let grad = ctx.createLinearGradient(0, 0, 0, h)
-            grad.addColorStop(0, Qt.rgba(root.barColor.r, root.barColor.g, root.barColor.b, 0.40))
+            grad.addColorStop(0, Qt.rgba(root.barColor.r, root.barColor.g, root.barColor.b, root.fillOpacity))
             grad.addColorStop(1, Qt.rgba(root.barColor.r, root.barColor.g, root.barColor.b, 0.02))
 
             ctx.beginPath()
@@ -50,7 +62,7 @@ Item {
             for (let i = 0; i < data.length; i++) {
                 let val = Math.max(0, Math.min(peakVal, data[i]))
                 let x = i * step
-                let y = h - (val / peakVal) * (h - 6) - 3
+                let y = h - (val / peakVal) * (h - 2 * root.inset) - root.inset
                 ctx.lineTo(x, y)
             }
 
@@ -64,12 +76,12 @@ Item {
             for (let i = 0; i < data.length; i++) {
                 let val = Math.max(0, Math.min(peakVal, data[i]))
                 let x = i * step
-                let y = h - (val / peakVal) * (h - 6) - 3
+                let y = h - (val / peakVal) * (h - 2 * root.inset) - root.inset
                 if (i === 0) ctx.moveTo(x, y)
                 else ctx.lineTo(x, y)
             }
             ctx.strokeStyle = root.barColor
-            ctx.lineWidth = 1.8
+            ctx.lineWidth = root.lineWidth
             ctx.stroke()
         }
     }
