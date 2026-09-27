@@ -12,7 +12,7 @@ That interface is restricted: KWin only answers a caller whose .desktop file
 lists it in X-KDE-DBUS-Restricted-Interfaces, which is why this runs through
 the shell's own helper binary and not through /usr/bin/python3.
 
-Usage: huginn-shell-helper window_shot.py <window uuid> [<window uuid> ...]
+Usage: huginn-shell-helper window_shot.py [--max-width=N] <window uuid> [...]
 Prints one "<uuid>\t<path>" line per window it managed to capture. A window
 that cannot be captured (a minimized one has no buffer) is simply left out.
 """
@@ -22,10 +22,12 @@ import time
 
 CACHE_DIR = os.path.expanduser('~/.cache/huginn/previews')
 # Wide enough to read at the card's size, small enough to encode quickly.
+# The overview draws its cards several times larger than the picker does, so
+# it asks for more with --max-width instead of every caller paying for it.
 MAX_WIDTH = 560
 
 
-def capture(uuid):
+def capture(uuid, max_width=MAX_WIDTH):
     import dbus
     from PIL import Image
 
@@ -72,8 +74,8 @@ def capture(uuid):
         b, g, r, a = image.split()
         image = Image.merge('RGB', (r, g, b))
 
-        if width > MAX_WIDTH:
-            image = image.resize((MAX_WIDTH, max(1, round(height * MAX_WIDTH / width))),
+        if width > max_width:
+            image = image.resize((max_width, max(1, round(height * max_width / width))),
                                  Image.LANCZOS)
 
         os.makedirs(CACHE_DIR, exist_ok=True)
@@ -106,11 +108,19 @@ def capture(uuid):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+    limit = MAX_WIDTH
+    if args and args[0].startswith('--max-width='):
+        # A bad number falls back to the default rather than failing the
+        # whole batch: a frame too small is still better than no frame.
+        option = args.pop(0).split('=', 1)[1]
+        if option.isdigit():
+            limit = max(64, min(3840, int(option)))
+    if not args:
         sys.exit(1)
-    for window_uuid in sys.argv[1:]:
+    for window_uuid in args:
         try:
-            result = capture(window_uuid)
+            result = capture(window_uuid, limit)
         except Exception as exc:
             print(f'window_shot: {window_uuid}: {exc}', file=sys.stderr)
             continue
