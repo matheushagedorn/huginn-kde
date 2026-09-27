@@ -807,6 +807,27 @@ Item {
 
                                 property bool cardHovered: cardMouseArea.containsMouse
 
+                                // Shared by the corner button and a middle click
+                                // anywhere on the card.
+                                function closeThis() {
+                                    if (!cardItem.winData) return
+                                    TaskService.closeSpecificWindow(cardItem.winData)
+                                    let targetId = String(cardItem.winData.id || "")
+                                    let rem = root.previewWindowInstances ? root.previewWindowInstances.filter(w => String(w ? (w.id || "") : "") !== targetId) : []
+                                    if (!rem || rem.length === 0) {
+                                        root.previewActive = false
+                                        root.isPreviewHovered = false
+                                        root.isCardHovered = false
+                                        previewCloseTimer.stop()
+                                        TaskService.previewRestoreWindow()
+                                    } else {
+                                        root.previewWindowInstances = rem
+                                        root.previewActive = true
+                                        root.isCardHovered = true
+                                        previewCloseTimer.stop()
+                                    }
+                                }
+
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: 8
@@ -825,7 +846,7 @@ Item {
                                         id: cardMouseArea
                                         anchors.fill: parent
                                         hoverEnabled: true
-                                        acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                                         onEntered: {
                                             root.isCardHovered = true
                                             root.previewActive = true
@@ -836,9 +857,17 @@ Item {
                                             previewCloseTimer.restart()
                                         }
                                         onPressed: (mouse) => {
-                                            TaskService.clearOriginalActiveWin()
+                                            // A middle click closes, and closing the
+                                            // last card still wants the window that
+                                            // was active before the hover back.
+                                            if (mouse.button !== Qt.MiddleButton)
+                                                TaskService.clearOriginalActiveWin()
                                         }
                                         onClicked: (mouse) => {
+                                            if (mouse.button === Qt.MiddleButton) {
+                                                cardItem.closeThis()
+                                                return
+                                            }
                                             TaskService.clearOriginalActiveWin()
                                             root.previewActive = false
                                             root.isPreviewHovered = false
@@ -962,23 +991,7 @@ Item {
                                                     onPressed: (mouse) => { mouse.accepted = true }
                                                     onClicked: (mouse) => {
                                                         mouse.accepted = true
-                                                        if (cardItem.winData) {
-                                                            TaskService.closeSpecificWindow(cardItem.winData)
-                                                            let targetId = String(cardItem.winData.id || "")
-                                                            let rem = root.previewWindowInstances ? root.previewWindowInstances.filter(w => String(w ? (w.id || "") : "") !== targetId) : []
-                                                            if (!rem || rem.length === 0) {
-                                                                root.previewActive = false
-                                                                root.isPreviewHovered = false
-                                                                root.isCardHovered = false
-                                                                previewCloseTimer.stop()
-                                                                TaskService.previewRestoreWindow()
-                                                            } else {
-                                                                root.previewWindowInstances = rem
-                                                                root.previewActive = true
-                                                                root.isCardHovered = true
-                                                                previewCloseTimer.stop()
-                                                            }
-                                                        }
+                                                        cardItem.closeThis()
                                                     }
                                                 }
                                             }

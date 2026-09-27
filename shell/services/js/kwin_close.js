@@ -1,7 +1,19 @@
-// KWin JavaScript Script: Close all windows matching an app class/caption
+// KWin JavaScript Script: Close one window by id, or all windows matching an app class/caption
+var targetId = "%TARGET_ID%".toLowerCase().trim();
 var name = "%APP_NAME%".toLowerCase().trim();
 
-if (name && name !== "") {
+if (targetId !== "") {
+    // One window, and only that one: no fallback to the name, which for a
+    // picker card is the caption and could close a sibling with a similar one.
+    var all = workspace.windowList();
+    for (var i = 0; i < all.length; i++) {
+        var id = String(all[i].internalId || all[i].windowId || "").toLowerCase().trim();
+        if (id === targetId) {
+            try { all[i].closeWindow(); } catch (e) {}
+            break;
+        }
+    }
+} else if (name && name !== "") {
     var windows = workspace.windowList();
     var matchingWindows = [];
 

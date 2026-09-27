@@ -5,14 +5,15 @@ import dbus
 
 JS_TEMPLATE_PATH = os.path.expanduser('~/.config/huginn/services/js/kwin_close.js')
 
-def close_app(app_name):
+def close_app(app_name, target_id=""):
     try:
         if not os.path.exists(JS_TEMPLATE_PATH):
             return
         with open(JS_TEMPLATE_PATH, 'r', encoding='utf-8') as f:
             template = f.read()
 
-        script = template.replace('%APP_NAME%', app_name.replace('"', '\\"'))
+        script = template.replace('%TARGET_ID%', target_id.replace('"', '\\"')) \
+                         .replace('%APP_NAME%', app_name.replace('"', '\\"'))
 
         target_js = f'/tmp/kwin_close_{os.getpid()}.js'
         with open(target_js, 'w', encoding='utf-8') as f:
@@ -50,5 +51,10 @@ def close_app(app_name):
         pass
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 2:
+    # Two arguments is one window (id, then caption, as the dock's picker
+    # sends them); one is every window of an app. Reading only the first
+    # made the picker's close button look for an app named after a UUID.
+    if len(sys.argv) >= 3:
+        close_app(sys.argv[2], target_id=sys.argv[1])
+    elif len(sys.argv) >= 2:
         close_app(sys.argv[1])
