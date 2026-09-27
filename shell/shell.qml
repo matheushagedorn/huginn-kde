@@ -109,7 +109,7 @@ Scope {
             required property var modelData
 
             screen: modelData
-            visible: !GameModeService.hidesScreen(secondaryBarWindow.screen)
+            visible: !GameModeService.hidesScreen(modelData)
 
             readonly property bool filled: secondaryBarWindow.screen
                                            && TaskService.filledScreens.indexOf(secondaryBarWindow.screen.name) >= 0
@@ -188,7 +188,7 @@ Scope {
         screen: primaryScreen
         // Unmapped, not faded, under a fullscreen game: see GameModeService
         // for why dropping the reserved area does not resize the game.
-        visible: !GameModeService.hidesScreen(window.screen)
+        visible: !GameModeService.hidesScreen(primaryScreen)
 
         // Edge to edge when a window owns the screen: the gap around the bar
         // is there to show the desktop through it, and with a maximized
@@ -269,7 +269,7 @@ Scope {
         screen: primaryScreen
         // Goes with the bar, edge strip and all, so nothing of the shell is
         // left waiting at the bottom of a screen a game has taken over.
-        visible: !GameModeService.hidesScreen(dockWindow.screen)
+        visible: !GameModeService.hidesScreen(primaryScreen)
         anchors {
             bottom: true
             left: true
