@@ -32,7 +32,9 @@ The dock, which stays hidden until the pointer reaches the bottom edge:
   the wallpaper itself, blurred and aligned to what sits behind the bar.
 - **Auto-hiding dock** — pinned apps and open windows, split by a separator,
   with window previews on click and drag-to-reorder.
-- **Application launcher** with search and a built-in calculator.
+- **Application launcher** with search and a built-in calculator, plus a
+  Games tab that lists what is installed through Steam, Hydra and Heroic as
+  portrait cover art and starts each game through its own store.
 - **On-screen display** for volume and brightness.
 - **Desktop monitoring widget** — CPU, GPU, memory, disk and network, with
   graphs and real hardware readings (nothing hardcoded). One card anatomy for

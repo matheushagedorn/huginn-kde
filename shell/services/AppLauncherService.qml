@@ -24,6 +24,9 @@ Item {
                 }
             }
         }
+        // The Games tab also exists when no desktop file claims the Game
+        // category: the store libraries alone are reason enough for it.
+        if (allGames.length > 0 && !seen[gamesCategory]) cats.push(gamesCategory)
         cats.sort((a, b) => a.localeCompare(b))
         return ["All"].concat(cats)
     }
@@ -57,6 +60,30 @@ Item {
     readonly property string recentCategory: "Recent"
     readonly property string favoritesCategory: "Favorites"
 
+    // ── Games ─────────────────────────────────────────────────────────────
+    // Installed games from Steam, Hydra and Heroic, read by
+    // game_library_service.py. They are shaped like apps (id, name) so search,
+    // ranking, favourites and recents treat them the same, and carry
+    // `kind: "game"` so the views know to draw a cover instead of an icon.
+    //
+    // They take over the Games category: with a store library on hand, the
+    // desktop files tagged Game are mostly the store launchers themselves,
+    // and those stay one search away under All.
+    property var allGames: []
+    readonly property string gamesCategory: "Games"
+    readonly property bool gamesView: activeCategory === gamesCategory && allGames.length > 0
+
+    function isGame(app) {
+        return !!app && app.kind === "game"
+    }
+
+    // File paths become URLs one segment at a time, so a cover whose path
+    // holds a space or a '#' still loads.
+    function coverSource(game) {
+        if (!game || !game.cover) return ""
+        return "file://" + game.cover.split("/").map(encodeURIComponent).join("/")
+    }
+
     // Filtered app list
     readonly property var filteredApps: {
         let q = searchQuery.toLowerCase().trim()
@@ -70,7 +97,30 @@ Item {
             return source.filter(a => a.name.toLowerCase().includes(q))
         }
 
+        if (gamesView) {
+            let games = q ? allGames.filter(g => g.name.toLowerCase().includes(q)) : Array.from(allGames)
+            if (q) {
+                let self = root
+                games.sort((a, b) => {
+                    let sa = self.matchScore(a.name, q)
+                    let sb = self.matchScore(b.name, q)
+                    if (sa !== sb) return sa - sb
+                    return a.name.localeCompare(b.name)
+                })
+            }
+            return games
+        }
+
         let result = []
+
+        // A query typed from All reaches the games too, so "hogw" and Enter
+        // starts the game without a detour through its tab.
+        if (q && activeCategory === "All") {
+            for (let i = 0; i < allGames.length; i++) {
+                if (allGames[i].name.toLowerCase().includes(q)) result.push(allGames[i])
+            }
+        }
+
         for (let i = 0; i < allApps.length; i++) {
             let app = allApps[i]
 
@@ -130,6 +180,14 @@ Item {
     }
 
     function launch(app) {
+        // A game starts through its own store (steam://, heroic://,
+        // hydralauncher://), never through the desktop-file path below.
+        if (isGame(app)) {
+            if (!app.launch || app.launch.length === 0) return
+            recordUse(app)
+            Quickshell.execDetached(app.launch)
+            return
+        }
         if (!app || !app.exec) return
         // Strip desktop-file field codes (%u %U %f %F etc.)
         let cmd = app.exec.replace(/%[a-zA-Z]/g, "").trim()
@@ -218,9 +276,14 @@ Item {
         return out
     }
 
+    // Games live in the same favourites and recents as apps, so the lookup
+    // covers both lists.
     function appById(id) {
         for (let i = 0; i < allApps.length; i++) {
             if (allApps[i].id === id) return allApps[i]
+        }
+        for (let i = 0; i < allGames.length; i++) {
+            if (allGames[i].id === id) return allGames[i]
         }
         return null
     }
@@ -378,11 +441,44 @@ Item {
         }
     }
 
+    // Builds the game library once, then answers each "reload" with a cheap
+    // mtime check of the store files; it only prints again when something
+    // changed or a cover finished downloading.
+    Process {
+        id: gamesProc
+        command: ["python3", "-u", Quickshell.env("HOME") + "/.config/huginn/services/python/game_library_service.py"]
+        running: true
+        stdinEnabled: true
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    let parsed = JSON.parse(data.trim())
+                    if (parsed && Array.isArray(parsed.games)) {
+                        root.allGames = parsed.games.map(g => Object.assign({ kind: "game" }, g))
+                    }
+                } catch (e) {}
+            }
+        }
+    }
+
+    // Losing the library while standing in Games (the last store game was
+    // uninstalled) would leave an empty tab whose label just vanished. If
+    // desktop files still claim the category, the tab stays and simply falls
+    // back to listing them.
+    onAllGamesChanged: {
+        if (activeCategory === gamesCategory && categories.indexOf(gamesCategory) < 0) activeCategory = "All"
+    }
+
     function reload() {
         if (parseProc.running) {
             parseProc.write("reload\n")
         } else {
             parseProc.running = true
+        }
+        if (gamesProc.running) {
+            gamesProc.write("reload\n")
+        } else {
+            gamesProc.running = true
         }
     }
 }

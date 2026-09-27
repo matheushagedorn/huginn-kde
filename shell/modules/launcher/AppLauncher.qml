@@ -34,6 +34,11 @@ PanelWindow {
 
     readonly property bool searching: searchField.text.length > 0
 
+    // Whichever grid is on screen. The Games tab has its own grid of portrait
+    // covers; keyboard navigation, the context menu and the counter all go
+    // through this so they work the same on both.
+    readonly property GridView activeGrid: AppLauncherService.gamesView ? gameGrid : appGrid
+
     // Math Evaluator Result
     property string mathResult: {
         let txt = searchField.text.trim()
@@ -80,7 +85,7 @@ PanelWindow {
             contextMenu.opened = false
             Qt.callLater(() => {
                 searchField.forceActiveFocus()
-                if (appGrid.count > 0) appGrid.positionViewAtIndex(0, GridView.Contain)
+                if (root.activeGrid.count > 0) root.activeGrid.positionViewAtIndex(0, GridView.Contain)
             })
         } else {
             // Closing through PopupService directly, as the shortcut and
@@ -113,7 +118,7 @@ PanelWindow {
     function openMenuForSelection() {
         let list = AppLauncherService.filteredApps
         if (root.selectedIndex < 0 || root.selectedIndex >= list.length) return
-        let item = appGrid.itemAtIndex(root.selectedIndex)
+        let item = root.activeGrid.itemAtIndex(root.selectedIndex)
         if (!item) return
         let pt = item.mapToItem(null, item.width / 2, item.height / 2)
         contextMenu.openAt(pt.x, pt.y, list[root.selectedIndex])
@@ -203,7 +208,7 @@ PanelWindow {
                             AppLauncherService.searchQuery = text
                             root.selectedIndex = 0
                             contextMenu.close()
-                            if (appGrid.count > 0) appGrid.positionViewAtIndex(0, GridView.Contain)
+                            if (root.activeGrid.count > 0) root.activeGrid.positionViewAtIndex(0, GridView.Contain)
                         }
 
                         Keys.onPressed: (event) => {
@@ -226,23 +231,24 @@ PanelWindow {
                             let count = AppLauncherService.filteredApps.length
                             if (count === 0) return
 
-                            let cols = Math.max(1, Math.floor(appGrid.width / appGrid.cellWidth))
+                            let grid = root.activeGrid
+                            let cols = Math.max(1, Math.floor(grid.width / grid.cellWidth))
 
                             if (event.key === Qt.Key_Right) {
                                 root.selectedIndex = Math.min(count - 1, root.selectedIndex + 1)
-                                appGrid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
+                                grid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
                                 event.accepted = true
                             } else if (event.key === Qt.Key_Left) {
                                 root.selectedIndex = Math.max(0, root.selectedIndex - 1)
-                                appGrid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
+                                grid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
                                 event.accepted = true
                             } else if (event.key === Qt.Key_Down) {
                                 root.selectedIndex = Math.min(count - 1, root.selectedIndex + cols)
-                                appGrid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
+                                grid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
                                 event.accepted = true
                             } else if (event.key === Qt.Key_Up) {
                                 root.selectedIndex = Math.max(0, root.selectedIndex - cols)
-                                appGrid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
+                                grid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
                                 event.accepted = true
                             } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                                 root.launchSelected()
@@ -254,7 +260,9 @@ PanelWindow {
                     // What the machine knows, in the machine's voice.
                     Text {
                         Layout.alignment: Qt.AlignVCenter
-                        text: appGrid.count + (appGrid.count === 1 ? " app" : " apps")
+                        text: root.activeGrid.count + (AppLauncherService.gamesView
+                              ? (root.activeGrid.count === 1 ? " game" : " games")
+                              : (root.activeGrid.count === 1 ? " app" : " apps"))
                         color: Theme.textMuted
                         font.pixelSize: Theme.fsCaption
                         font.family: Theme.fontMono
@@ -374,7 +382,10 @@ PanelWindow {
                         anchors.fill: parent
                         clip: true
 
-                        model: AppLauncherService.filteredApps
+                        visible: !AppLauncherService.gamesView
+                        // Emptied rather than just hidden while Games is on
+                        // screen, so it is not building tiles nobody sees.
+                        model: AppLauncherService.gamesView ? [] : AppLauncherService.filteredApps
                         cellWidth: Math.floor(width / Math.max(1, Math.floor(width / 132)))
                         cellHeight: 130
 
@@ -418,6 +429,72 @@ PanelWindow {
                             // column as the panel opens, and never animate again.
                             opacity: {
                                 let cols = Math.max(1, Math.floor(appGrid.width / appGrid.cellWidth))
+                                let delay = (index % cols) * 0.06
+                                return Math.max(0, Math.min(1, (root.openProgress - delay) * 4))
+                            }
+
+                            onHoverEntered: root.selectedIndex = index
+                            onActivated: {
+                                root.selectedIndex = index
+                                AppLauncherService.launch(modelData)
+                                root.closeWithAnimation()
+                            }
+                            onContextRequested: (gx, gy) => contextMenu.openAt(gx, gy, modelData)
+                        }
+                    }
+
+                    // ── Game grid ─────────────────────────────────────────
+                    // Same behaviour as the app grid, bigger cells: portrait
+                    // covers read at around 150px wide, which gives six
+                    // columns on the full-size panel.
+                    GridView {
+                        id: gameGrid
+                        anchors.fill: parent
+                        clip: true
+                        visible: AppLauncherService.gamesView
+
+                        model: AppLauncherService.gamesView ? AppLauncherService.filteredApps : []
+                        cellWidth: Math.floor(width / Math.max(1, Math.floor(width / 160)))
+                        // Cover (2:3, inside the tile's two insets) plus the
+                        // label block under it; see GameTile.labelHeight.
+                        cellHeight: Math.round((cellWidth - 2 * Theme.sp1 - 2 * Theme.sp2) * 1.5)
+                                    + 2 * Theme.sp1 + 3 * Theme.sp2 + 40
+
+                        ScrollBar.vertical: ScrollBar {
+                            visible: gameGrid.contentHeight > gameGrid.height
+                            policy: ScrollBar.AsNeeded
+                            contentItem: Rectangle {
+                                implicitWidth: 3
+                                radius: 1.5
+                                color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.4)
+                            }
+                            background: Rectangle { color: "transparent" }
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: gameGrid.count === 0
+                            text: root.searching
+                              ? "No game matches " + '"' + searchField.text + '"'
+                              : "No installed games"
+                            color: Theme.textMuted
+                            font.pixelSize: Theme.fsBody
+                            font.family: Theme.fontFamily
+                        }
+
+                        delegate: GameTile {
+                            required property var modelData
+                            required property int index
+
+                            width: gameGrid.cellWidth
+                            height: gameGrid.cellHeight
+
+                            game: modelData
+                            selected: index === root.selectedIndex
+                            interactive: !contextMenu.opened
+
+                            opacity: {
+                                let cols = Math.max(1, Math.floor(gameGrid.width / gameGrid.cellWidth))
                                 let delay = (index % cols) * 0.06
                                 return Math.max(0, Math.min(1, (root.openProgress - delay) * 4))
                             }

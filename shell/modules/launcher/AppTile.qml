@@ -55,13 +55,20 @@ Item {
                 Layout.preferredWidth: root.iconSize
                 Layout.preferredHeight: root.iconSize
 
+                // A game that turns up here (a search from All, Recent,
+                // Favorites) has no icon, only its cover: drawn to fit, it
+                // reads as a small box on the shelf next to the app icons.
                 AppIcon {
                     id: appIcon
                     anchors.fill: parent
-                    source: root.app ? AppLauncherService.iconSource(root.app.icon) : ""
-                    scaleHint: root.app && root.app.iconScale !== undefined
-                               ? root.app.iconScale
-                               : AppLauncherService.iconScale(root.app ? root.app.icon : "")
+                    source: !root.app ? ""
+                            : (AppLauncherService.isGame(root.app)
+                               ? AppLauncherService.coverSource(root.app)
+                               : AppLauncherService.iconSource(root.app.icon))
+                    scaleHint: AppLauncherService.isGame(root.app) ? 1.0
+                               : (root.app && root.app.iconScale !== undefined
+                                  ? root.app.iconScale
+                                  : AppLauncherService.iconScale(root.app ? root.app.icon : ""))
                     visible: status === Image.Ready
                 }
 

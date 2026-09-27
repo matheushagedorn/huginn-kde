@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import "../../services"
 import "../../theme"
 
-// Right-click menu for an application tile.
+// Right-click menu for an application tile, and for a game's cover.
 //
 // Deliberately NOT a PopupWindow. The launcher already owns a full-screen
 // surface, so the menu is drawn inside it: no anchor gravity to get wrong, no
@@ -122,7 +122,10 @@ Item {
                     sourceSize.width: 18
                     sourceSize.height: 18
                     fillMode: Image.PreserveAspectFit
-                    source: root.app ? AppLauncherService.iconSource(root.app.icon) : ""
+                    source: !root.app ? ""
+                            : (AppLauncherService.isGame(root.app)
+                               ? AppLauncherService.coverSource(root.app)
+                               : AppLauncherService.iconSource(root.app.icon))
                     smooth: true
                 }
 
@@ -146,7 +149,7 @@ Item {
             }
 
             MenuRow {
-                label: "Open"
+                label: AppLauncherService.isGame(root.app) ? "Play" : "Open"
                 onTriggered: {
                     AppLauncherService.launch(root.app)
                     root.close()
@@ -183,7 +186,11 @@ Item {
                 }
             }
 
+            // The dock matches pins against running windows by app id, and a
+            // game's window belongs to Proton or the game itself, not to an
+            // entry it could match. Pinning one would only add a dead icon.
             MenuRow {
+                visible: !AppLauncherService.isGame(root.app)
                 label: AppLauncherService.isPinnedToDock(root.app) ? "Unpin from dock" : "Pin to dock"
                 onTriggered: {
                     AppLauncherService.togglePinToDock(root.app)
