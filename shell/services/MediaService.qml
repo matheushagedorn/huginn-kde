@@ -45,6 +45,71 @@ Item {
     property bool hasPlayer: false
     property bool isSeeking: false
 
+    // The colour of the cover that is playing, as "#rrggbb", for the bar's
+    // media island. Empty when there is no cover or no colour could be taken
+    // from it (no Pillow, no network, a black and white sleeve), so each
+    // consumer falls back to its own palette colour instead of a guess.
+    property string artTint: ""
+    // Covers already seen in this session. Skipping back a track, or two
+    // players taking turns, should not start Python again for a colour we
+    // already have. Only successes go in: a failed download may work later.
+    property var tintMemo: ({})
+
+    onArtUrlChanged: {
+        if (artUrl === "") {
+            artTint = ""
+            return
+        }
+        let known = tintMemo[artUrl]
+        if (known !== undefined) {
+            artTint = known
+            return
+        }
+        // The old colour stays until the new one lands, so a track change
+        // fades from one cover's colour to the next instead of dipping
+        // through the accent in between.
+        tintTimer.restart()
+    }
+
+    // Debounced like the wallpaper palette in Theme: metadata for a new track
+    // can arrive in a burst, and starting a Process that is already running
+    // silently does nothing, which would leave the tint on a stale cover.
+    Timer {
+        id: tintTimer
+        interval: 150
+        onTriggered: {
+            if (tintProc.running) {
+                restart()
+                return
+            }
+            if (root.artUrl === "") return
+            tintProc.command = [
+                "python3", Quickshell.env("HOME") + "/.config/huginn/services/python/album_tint.py",
+                root.artUrl
+            ]
+            tintProc.running = true
+        }
+    }
+
+    Process {
+        id: tintProc
+        stdout: SplitParser {
+            onRead: data => {
+                let r
+                try { r = JSON.parse(data) } catch (e) { return }
+                // An answer about a cover that is no longer showing is
+                // dropped; the timer has already queued the current one.
+                if (!r || r.source !== root.artUrl) return
+                if (r.tint) {
+                    root.tintMemo[r.source] = r.tint
+                    root.artTint = r.tint
+                } else {
+                    root.artTint = ""
+                }
+            }
+        }
+    }
+
     property real position: 0
     property real length: 0
     property real progress: length > 0 ? Math.min(1.0, Math.max(0.0, position / length)) : 0.0

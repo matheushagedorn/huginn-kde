@@ -24,14 +24,19 @@ def _hsv_to_hex(h, s, v):
     return "#%02x%02x%02x" % (round(r * 255), round(g * 255), round(b * 255))
 
 
-def extract(path):
+def colour_entries(img, colors=16):
+    """Quantise a Pillow image and return its colours as HSV with weights.
+
+    Shared with album_tint.py, which picks a cover's colour the same way the
+    wallpaper's accent is picked here.
+    """
     from PIL import Image
 
-    img = Image.open(path).convert("RGB")
+    img = img.convert("RGB")
     img.thumbnail((240, 240))
     # 16 buckets is enough to separate the subject from the ground without
     # splitting one gradient into a dozen near-identical entries.
-    quantised = img.quantize(colors=16, method=Image.MEDIANCUT).convert("RGB")
+    quantised = img.quantize(colors=colors, method=Image.MEDIANCUT).convert("RGB")
     counts = sorted(quantised.getcolors(maxcolors=4096) or [], reverse=True)
     if not counts:
         raise ValueError("no colours in image")
@@ -41,15 +46,28 @@ def extract(path):
     for count, (r, g, b) in counts:
         h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
         entries.append({"h": h, "s": s, "v": v, "weight": count / total})
+    return entries
 
-    # The accent is the colour a person would name if asked what colour the
-    # wallpaper is: vivid enough to register, present enough to matter, and
-    # not so dark that it disappears against the panel it will sit on.
+
+def pick_vivid(entries):
+    """The colour a person would name if asked what colour the picture is.
+
+    Vivid enough to register, present enough to matter, and not so dark that
+    it disappears against the panel it will sit on. None when the picture has
+    no such colour at all (a black and white photo).
+    """
     def accent_score(e):
         return (e["s"] ** 1.6) * (e["v"] ** 0.6) * (e["weight"] ** 0.25)
 
     vivid = [e for e in entries if e["s"] >= 0.18 and e["v"] >= 0.15]
-    accent_src = max(vivid, key=accent_score) if vivid else max(entries, key=lambda e: e["weight"])
+    return max(vivid, key=accent_score) if vivid else None
+
+
+def extract(path):
+    from PIL import Image
+
+    entries = colour_entries(Image.open(path))
+    accent_src = pick_vivid(entries) or max(entries, key=lambda e: e["weight"])
 
     # The ground takes the picture's dominant hue but almost none of its
     # colour: a bar has to stay readable under any wallpaper, so the hue is a
