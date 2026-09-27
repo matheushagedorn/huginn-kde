@@ -99,6 +99,11 @@ GlassPanel {
                                     modelData.activate(gx, gy)
                                 }
                             } else if (mouse.button === Qt.RightButton) {
+                                // Toggling only makes sense on the icon whose
+                                // menu is showing. On any other icon the open
+                                // menu switches to it; toggling there swapped
+                                // the content and then closed it, a flash.
+                                var switching = PopupService.trayMenuOpen && root.activeTrayItem !== modelData
                                 root.activeTrayItem = modelData
                                 root.activeTrayMenuOpener = itemMenuOpener
                                 var mapped = trayItemRect.mapToItem(root, 0, 0)
@@ -110,7 +115,8 @@ GlassPanel {
                                     modelData.secondaryActivate(gx, gy)
                                 }
 
-                                PopupService.toggleTray()
+                                if (switching) trayContextMenu.replayPopIn()
+                                else PopupService.toggleTray()
                             }
                         }
                     }
@@ -2992,6 +2998,19 @@ Connections {
 
         property real animProgress: 0.0
 
+        // Moving to another icon. A popup that is already mapped keeps the
+        // position it was created at, so the new menu would open under the
+        // old icon; unmapping and mapping again places it under the new one,
+        // with the same entrance as a fresh open.
+        function replayPopIn() {
+            trayPopOut.running = false
+            trayPopIn.running = false
+            visible = false
+            animProgress = 0.0
+            visible = true
+            trayPopIn.restart()
+        }
+
         NumberAnimation on animProgress {
             id: trayPopIn
             running: false
@@ -3086,6 +3105,7 @@ Connections {
 
                 // Render Pure Native DBus App Menu Items (Pre-Cached Real Time Model)
                 Repeater {
+                    id: nativeTrayMenu
                     model: (root.activeTrayItem && root.activeTrayItem.hasMenu && root.activeTrayMenuOpener && root.activeTrayMenuOpener.children) ? root.activeTrayMenuOpener.children : 0
 
                     ColumnLayout {
@@ -3153,7 +3173,12 @@ Connections {
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 2
-                    visible: !(root.activeTrayMenuOpener && root.activeTrayMenuOpener.children && root.activeTrayMenuOpener.children.length > 0)
+                    // Only for apps that publish no menu of their own. The
+                    // opener's children is a model, not an array, so asking
+                    // it for .length was always undefined and these three
+                    // showed up under every native menu, "Close application"
+                    // included, next to the app's own Quit.
+                    visible: nativeTrayMenu.count === 0
 
                     Rectangle {
                         Layout.fillWidth: true
