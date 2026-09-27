@@ -16,6 +16,11 @@ Item {
         { appId: "kate", name: "Kate", icon: "kate", cmd: "kate" }
     ]
 
+    // A game closed after a session worth recording: {name, icon, start, end},
+    // times in Unix seconds. Written to disk by active_window_service before
+    // it gets here; GameModeService turns it into the summary toast.
+    signal gameSessionEnded(var session)
+
     property var runningWindows: []
     property var openWindowApps: []
     property bool isFullscreen: false
@@ -423,7 +428,9 @@ Item {
                 } else if (txt.startsWith("{")) {
                     try {
                         let parsed = JSON.parse(txt)
-                        if (parsed) {
+                        if (parsed && parsed.gameSession) {
+                            root.gameSessionEnded(parsed.gameSession)
+                        } else if (parsed) {
                             if (parsed.active !== undefined) {
                                 root.activeAppId = parsed.active
                             }

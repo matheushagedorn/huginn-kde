@@ -13,6 +13,7 @@ import configparser
 import dbus
 import dbus.service
 import pe_icon
+import game_sessions
 import dbus.mainloop.glib
 import signal
 import atexit
@@ -636,8 +637,10 @@ def resolve_app_info(app_id, pid=0):
 FULLSCREEN_FILE = "/tmp/huginn_is_fullscreen.txt"
 
 class ActiveAppService(dbus.service.Object):
-    def __init__(self, bus_name):
+    def __init__(self, bus_name, detector=None, sessions=None):
         super().__init__(bus_name, "/ActiveApp")
+        self.detector = detector or game_sessions.GameDetector()
+        self.sessions = sessions or game_sessions.PlaySessions()
 
     @dbus.service.method("io.huginn.ActiveApp", in_signature="sss")
     def updateState(self, active_app, open_windows_json, is_fullscreen_str="false"):
@@ -652,10 +655,22 @@ class ActiveAppService(dbus.service.Object):
 
             raw_wins = json.loads(open_windows_json)
             enriched_wins = []
+            pids = []
             for item in raw_wins:
                 if isinstance(item, dict):
                     app_id = item.get("appId", "")
-                    info = resolve_app_info(app_id, item.get("pid", 0))
+                    pid = item.get("pid", 0)
+                    pids.append(pid)
+                    info = resolve_app_info(app_id, pid)
+                    # Game mode and the play sessions both hang off this flag;
+                    # see game_sessions for what counts as a game and why.
+                    is_game, steam_id = self.detector.classify(app_id.lower().strip(), pid)
+                    if steam_id and not app_id.lower().startswith("steam_app_"):
+                        # A native Steam game names itself after its binary;
+                        # the manifest has the name the library shows.
+                        steam_info = resolve_game_info(f"steam_app_{steam_id}")
+                        if steam_info and not steam_info["name"].startswith("Steam Game ("):
+                            info = dict(steam_info, appId=info.get("appId", app_id))
                     icon = icon_theme.prefer_themed(info.get("icon", ""), info.get("name", app_id))
                     enriched_wins.append({
                         "id": item.get("id", app_id),
@@ -668,12 +683,19 @@ class ActiveAppService(dbus.service.Object):
                         "active": item.get("active", False),
                         "maximized": item.get("maximized", False),
                         "fullScreen": item.get("fullScreen", False),
-                        "output": item.get("output", "")
+                        "output": item.get("output", ""),
+                        "game": is_game
                     })
                 elif isinstance(item, str):
                     enriched_wins.append(resolve_app_info(item))
 
             icon_metrics.save_cache()
+            self.detector.forget_except(pids)
+
+            # A line of its own, before the state: TaskService passes it on to
+            # GameModeService, which shows the summary once the game is gone.
+            for session in self.sessions.update(enriched_wins):
+                print(json.dumps({"gameSession": session}), flush=True)
 
             with open(OPEN_WINS_FILE, "w") as f:
                 f.write(json.dumps(enriched_wins))
@@ -792,6 +814,11 @@ def main():
         bus_name = dbus.service.BusName("io.huginn.ActiveApp", bus=dbus.SessionBus())
         service = ActiveAppService(bus_name)
         setup_kwin_listener()
+
+        # Keeps a running session's last sign of life fresh, so a game that
+        # closes while the shell is down still gets an end time close to the
+        # real one when the shell comes back.
+        GLib.timeout_add_seconds(60, service.sessions.heartbeat)
 
         # Nothing above proves the listener is alive; only an incoming
         # updateState does. Check once the loop is running and retry if the
