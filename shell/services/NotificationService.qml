@@ -81,8 +81,11 @@ Item {
                 return
             }
 
+            var critical = notification.urgency === NotificationUrgency.Critical
+
             var entry = {
                 "id": notification.id,
+                "critical": critical,
                 "app": notification.appName && notification.appName !== ""
                        ? notification.appName : "Notification",
                 "summary": notification.summary,
@@ -98,6 +101,11 @@ Item {
                 if (dropped.ref) dropped.ref.dismiss()
             }
             root.notifications = arr
+
+            // In game mode the notification is kept, only its toast is not:
+            // it waits in the list for when the game is over. A critical one
+            // (a low battery, a failing disk) still interrupts.
+            if (GameModeService.active && !critical) return
             root.notificationReceived(entry)
         }
     }

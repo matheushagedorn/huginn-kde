@@ -17,12 +17,18 @@ PanelWindow {
         right: 20
     }
 
-    WlrLayershell.layer: WlrLayershell.Top
+    // KWin stacks the active fullscreen window above the Top layer, so during
+    // game mode the only toast that gets through, a critical one, has to sit
+    // on Overlay to be seen at all.
+    WlrLayershell.layer: GameModeService.active ? WlrLayershell.Overlay : WlrLayershell.Top
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
 
     property var currentToast: null
+    // A toast already up when a game takes over goes away with the rest; the
+    // notification itself stays in the list.
     visible: currentToast !== null && !NotificationService.isDnd
+             && (!GameModeService.active || currentToast.critical === true)
 
     implicitWidth: 340
     implicitHeight: toastCard.implicitHeight
@@ -42,6 +48,23 @@ PanelWindow {
             toastWindow.currentToast = notif
             dismissTimer.restart()
         }
+    }
+
+    // The summary after a game closes wears the same card, with the game's
+    // icon where the bell would be.
+    Connections {
+        target: GameModeService
+        function onSessionSummary(entry) {
+            toastWindow.currentToast = entry
+            dismissTimer.restart()
+        }
+    }
+
+    function iconSource(icon) {
+        if (!icon) return ""
+        if (icon.startsWith("/")) return "file://" + icon
+        if (icon.indexOf("://") >= 0) return icon
+        return Quickshell.iconPath(icon, "applications-games")
     }
 
     // Glassmorphism Card Container
@@ -84,6 +107,16 @@ PanelWindow {
                         name: "bell"
                         implicitWidth: 15
                         implicitHeight: 15
+                        visible: !toastIcon.visible
+                    }
+
+                    AppIcon {
+                        id: toastIcon
+                        anchors.centerIn: parent
+                        width: 18
+                        height: 18
+                        source: toastWindow.currentToast ? toastWindow.iconSource(toastWindow.currentToast.icon || "") : ""
+                        visible: source !== ""
                     }
                 }
 

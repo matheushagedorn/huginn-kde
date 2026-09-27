@@ -59,6 +59,22 @@ Scope {
         }
     }
 
+    // Game mode normally follows the game on its own; these force it for the
+    // cases detection gets wrong, a game it misses or a window it should not
+    // have taken for one. A forced "off" lasts until that game loses focus.
+    IpcHandler {
+        target: "gamemode"
+        function toggle() { GameModeService.toggle() }
+        function enable() { GameModeService.enable() }
+        function disable() { GameModeService.disable() }
+        function auto() { GameModeService.reset() }
+        function status(): string {
+            return (GameModeService.active ? "on" : "off")
+                 + (GameModeService.manual !== "" ? " (forced)" : "")
+                 + (GameModeService.gameName !== "" ? ": " + GameModeService.gameName : "")
+        }
+    }
+
     // Primary monitor (confirm yours with kscreen-doctor -o). Every window
     // below points at it, otherwise each one lands on a different screen.
     property var primaryScreen: Quickshell.screens.find(s => s.name === "DP-2") || Quickshell.screens[0]
@@ -87,6 +103,7 @@ Scope {
             required property var modelData
 
             screen: modelData
+            visible: !GameModeService.hidesScreen(secondaryBarWindow.screen)
 
             readonly property bool filled: secondaryBarWindow.screen
                                            && TaskService.filledScreens.indexOf(secondaryBarWindow.screen.name) >= 0
@@ -163,6 +180,9 @@ Scope {
     PanelWindow {
         id: window
         screen: primaryScreen
+        // Unmapped, not faded, under a fullscreen game: see GameModeService
+        // for why dropping the reserved area does not resize the game.
+        visible: !GameModeService.hidesScreen(window.screen)
 
         // Edge to edge when a window owns the screen: the gap around the bar
         // is there to show the desktop through it, and with a maximized
@@ -241,6 +261,9 @@ Scope {
     PanelWindow {
         id: dockWindow
         screen: primaryScreen
+        // Goes with the bar, edge strip and all, so nothing of the shell is
+        // left waiting at the bottom of a screen a game has taken over.
+        visible: !GameModeService.hidesScreen(dockWindow.screen)
         anchors {
             bottom: true
             left: true
