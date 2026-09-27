@@ -14,6 +14,7 @@ Item {
     property int cpuCores: 8
     property var cpuHistory: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
 
+    property bool hasGpu: false
     property string gpuName: ""
     property int gpuPct: 0
     property real gpuTemp: 0.0
@@ -64,6 +65,7 @@ Item {
                         if (parsed.cpu_cores !== undefined) root.cpuCores = parsed.cpu_cores
                         if (parsed.cpu_history !== undefined) root.cpuHistory = parsed.cpu_history
 
+                        if (parsed.has_gpu !== undefined) root.hasGpu = parsed.has_gpu
                         if (parsed.gpu_name !== undefined) root.gpuName = parsed.gpu_name
                         if (parsed.gpu_pct !== undefined) root.gpuPct = parsed.gpu_pct
                         if (parsed.gpu_temp !== undefined) root.gpuTemp = parsed.gpu_temp

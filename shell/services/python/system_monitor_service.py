@@ -227,6 +227,10 @@ def get_hardware_metrics():
         "gpu_vram_total": 8188,
         "gpu_power": "20W / 78W",
         "gpu_fan": 0,
+        # Only nvidia-smi answering proves there is a GPU to report on; the
+        # numbers above are placeholders, and the desktop strip must not
+        # draw a GPU the machine does not have.
+        "has_gpu": False,
         "nvme_temp": 0.0,
         "wifi_temp": 0.0,
         "wifi_signal": get_wifi_signal()
@@ -247,6 +251,7 @@ def get_hardware_metrics():
             p_draw = float(parts[4])
             p_lim = float(parts[5])
             hw["gpu_power"] = f"{int(p_draw)}W / {int(p_lim)}W"
+            hw["has_gpu"] = True
     except Exception:
         pass
 
@@ -382,6 +387,7 @@ def stream_stats():
                 "gpu_power": hw["gpu_power"],
                 "gpu_fan": hw["gpu_fan"],
                 "gpu_history": list(gpu_history),
+                "has_gpu": hw["has_gpu"],
                 "nvme_temp": hw["nvme_temp"],
                 "wifi_temp": hw["wifi_temp"],
                 "has_wifi": get_has_wifi(),
