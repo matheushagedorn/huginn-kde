@@ -151,6 +151,28 @@ def get_steam_library_paths():
             pass
     return paths
 
+def _steam_library_icon(steam_id):
+    """The small icon Steam keeps for a game in its library cache.
+
+    It is the one file named by a 40-character hash inside the game's folder;
+    the others (logo, hero, library_600x900) are artwork, not icons.
+    """
+    roots = [os.path.expanduser('~/.local/share/Steam'),
+             os.path.expanduser('~/.steam/root'),
+             os.path.expanduser('~/.var/app/com.valvesoftware.Steam/data/Steam')]
+    for root in roots:
+        folder = os.path.join(root, 'appcache', 'librarycache', steam_id)
+        try:
+            for entry in sorted(os.listdir(folder)):
+                stem, ext = os.path.splitext(entry)
+                if len(stem) == 40 and ext.lower() in ('.jpg', '.png') \
+                        and all(c in '0123456789abcdef' for c in stem.lower()):
+                    return [os.path.join(folder, entry)]
+        except OSError:
+            continue
+    return []
+
+
 def resolve_game_info(app_lower):
     # Handle Steam Apps (e.g. steam_app_1245620 or steam_app_2357570 or steam_app_570)
     #
@@ -178,7 +200,7 @@ def resolve_game_info(app_lower):
             if not game_name:
                 vdf_paths = []
                 for lib_dir in get_steam_library_paths():
-                    vdf_file = os.path.join(lib_dir, f'appmanifest_{steam_id}.vdf')
+                    vdf_file = os.path.join(lib_dir, f'appmanifest_{steam_id}.acf')
                     if os.path.exists(vdf_file):
                         vdf_paths.append(vdf_file)
                 for vp in vdf_paths:
@@ -194,6 +216,8 @@ def resolve_game_info(app_lower):
                 icon_candidates = glob.glob(os.path.expanduser(f'~/.steam/root/steam/games/*{steam_id}*.png')) + \
                                   glob.glob(os.path.expanduser(f'~/.local/share/Steam/steam/games/*{steam_id}*.png')) + \
                                   glob.glob(os.path.expanduser(f'~/.var/app/com.valvesoftware.Steam/data/Steam/steam/games/*{steam_id}*.png'))
+                if not icon_candidates:
+                    icon_candidates = _steam_library_icon(steam_id)
                 if icon_candidates:
                     game_icon = icon_candidates[0]
                 else:
@@ -277,7 +301,16 @@ def resolve_game_info(app_lower):
         return {
             "appId": app_lower,
             "name": clean_name if clean_name else "Game",
-            "icon": "com.valvesoftware.Steam"
+            "icon": "applications-games"
+        }
+
+    # steam_app_default with no process to ask: without this it slid into the
+    # partial .desktop match below and came out as Steam itself.
+    if app_lower.startswith('steam_app_'):
+        return {
+            "appId": app_lower,
+            "name": "Game",
+            "icon": "applications-games"
         }
 
     return None
@@ -355,6 +388,79 @@ def _match_heroic_game(windows_exe):
     return None, ""
 
 
+def _prefix_from_pid(pid):
+    """The WINEPREFIX the process was started with, from its own environment."""
+    try:
+        with open(f'/proc/{int(pid)}/environ', 'rb') as f:
+            for entry in f.read().split(b'\0'):
+                if entry.startswith(b'WINEPREFIX='):
+                    return entry.decode('utf-8', 'replace')[len('WINEPREFIX='):]
+    except Exception:
+        pass
+    return ""
+
+
+def _case_insensitive_path(root, parts):
+    """Walks a Windows-style path over a case-sensitive filesystem."""
+    current = root
+    for part in parts:
+        if not part:
+            continue
+        candidate = os.path.join(current, part)
+        if os.path.exists(candidate):
+            current = candidate
+            continue
+        try:
+            entries = os.listdir(current)
+        except OSError:
+            return ""
+        lowered = part.lower()
+        match = next((e for e in entries if e.lower() == lowered), None)
+        if match is None:
+            return ""
+        current = os.path.join(current, match)
+    return current
+
+
+def _unix_exe_from_pid(pid, windows_exe):
+    """The Linux path of the running .exe, without asking any catalogue.
+
+    The window reports a Windows path and pe_icon needs a real file. Matching
+    the file name against Heroic's library was the only bridge, so every game
+    that Heroic does not know about -- which here is every game but the one
+    sideloaded by hand -- lost its icon and wore Heroic's instead.
+
+    Two ways back, both from the process itself. Its working directory is
+    normally the game's own folder, and its WINEPREFIX carries dosdevices,
+    where each drive letter is a symlink to somewhere on the disk.
+    """
+    name = os.path.basename(windows_exe.replace('\\', '/'))
+    if not name:
+        return ""
+
+    try:
+        cwd = os.path.realpath(f'/proc/{int(pid)}/cwd')
+    except Exception:
+        cwd = ""
+    if cwd and os.path.isdir(cwd):
+        candidate = _case_insensitive_path(cwd, [name])
+        if candidate and os.path.isfile(candidate):
+            return candidate
+
+    path = windows_exe.replace('\\', '/')
+    if len(path) > 2 and path[1] == ':':
+        prefix = _prefix_from_pid(pid)
+        if prefix:
+            drive = os.path.join(prefix, 'dosdevices', path[0].lower() + ':')
+            if os.path.exists(drive):
+                candidate = _case_insensitive_path(os.path.realpath(drive),
+                                                   path[2:].split('/'))
+                if candidate and os.path.isfile(candidate):
+                    return candidate
+
+    return ""
+
+
 def resolve_wine_game(app_lower, pid):
     """Name and icon for a game running under Wine or Proton.
 
@@ -368,15 +474,31 @@ def resolve_wine_game(app_lower, pid):
     if windows_exe in _wine_game_cache:
         return _wine_game_cache[windows_exe]
 
+    # A real Steam id names the game even when the icon has to come from the
+    # executable; resolve_game_info says "Steam Game (<id>)" when it cannot.
+    steam_info = None
+    steam_id = app_lower.split('steam_app_')[-1].split('.')[0] if app_lower.startswith('steam_app_') else ""
+    if steam_id.isdigit():
+        steam_info = resolve_game_info(app_lower)
+
     title, unix_exe = _match_heroic_game(windows_exe)
+    if not title and steam_info and not steam_info["name"].startswith("Steam Game ("):
+        title = steam_info["name"]
     if not title:
         # Not in any catalogue: the file name is still better than "Steam Game"
         title = os.path.basename(windows_exe.replace('\\', '/'))[:-4].replace('_', ' ').strip() or "Game"
 
+    # The catalogue is a source of names, not the only way to the file.
+    if not unix_exe:
+        unix_exe = _unix_exe_from_pid(pid, windows_exe)
+
     icon = pe_icon.icon_for_exe(unix_exe) if unix_exe else ""
+    if not icon and steam_info and steam_info["icon"] != "com.valvesoftware.Steam":
+        icon = steam_info["icon"]
     if not icon:
-        # Heroic launched it, so its icon is the honest fallback
-        icon = "com.heroicgameslauncher.hgl"
+        # Any launcher's logo here (Steam, Heroic, Hydra) would be a guess at
+        # who started it; a generic game icon at least does not lie.
+        icon = "applications-games"
 
     info = {"appId": app_lower, "name": title, "icon": icon}
     _wine_game_cache[windows_exe] = info
@@ -399,7 +521,10 @@ def get_all_desktop_files():
     return _desktop_file_cache
 
 def _is_wine_window(app_lower):
-    return (app_lower.startswith('steam_app_') and not app_lower.split('steam_app_')[-1].split('.')[0].isdigit()) \
+    # Numeric ids included: Hydra launches through umu with GAMEID=umu-<id>,
+    # which Proton turns into the class steam_app_<id> for a game Steam never
+    # installed, so the Steam branch alone could only answer with Steam's logo.
+    return app_lower.startswith('steam_app_') \
         or app_lower in ('wine', 'wine64', 'proton', 'gamescope', 'explorer.exe') \
         or app_lower.endswith('.exe')
 
