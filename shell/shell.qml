@@ -18,12 +18,12 @@ import "theme"
 Scope {
     IpcHandler {
         target: "reload"
+        // Quickshell.reload takes `hard` and refuses to run without it, so the
+        // bare call this used to make only ever printed "Insufficient
+        // arguments". A soft reload keeps the windows and re-reads the config,
+        // which is what a theme or code change needs.
         function reload() {
-            if (typeof Quickshell.reload === "function") {
-                Quickshell.reload()
-            } else if (typeof Quickshell.reloadConfig === "function") {
-                Quickshell.reloadConfig()
-            }
+            Quickshell.reload(false)
         }
     }
 
