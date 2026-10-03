@@ -238,6 +238,38 @@ Item {
     // enough to clear AA and leave it untouched when it already does.
     // ---------------------------------------------------------------------
 
+    // Pulls a colour that came from outside the palette (an album cover)
+    // toward `anchor`, so it reads as part of the theme instead of arguing
+    // with it. The hue moves `amount` of the way along the shorter arc and is
+    // then kept within 30 degrees of the anchor's, and the colour never gets
+    // more saturated than the anchor: the cover still shifts the island track
+    // by track, but always within the palette's family.
+    function harmonize(rawC, rawAnchor, amount) {
+        // MediaService hands the cover's colour over as a "#rrggbb" string,
+        // which has no hsv* properties: convert before reading them.
+        var c = Qt.color(rawC), anchor = Qt.color(rawAnchor)
+        var t = amount === undefined ? 0.5 : amount
+        var cs = c.hsvSaturation, anchorS = anchor.hsvSaturation
+        // A grey cover has no hue worth keeping.
+        if (cs < 0.08 || c.hsvHue < 0) return anchor
+        var ah = anchor.hsvHue < 0 ? c.hsvHue : anchor.hsvHue
+        var d = ah - c.hsvHue
+        if (d > 0.5) d -= 1
+        if (d < -0.5) d += 1
+        // Pulled part of the way, then held within `spread` of the anchor:
+        // a cover from across the wheel lands at the edge of the palette's
+        // family instead of halfway to somewhere else.
+        var spread = 30 / 360
+        var off = -d * (1 - t)
+        off = Math.max(-spread, Math.min(spread, off))
+        var h = ah + off
+        h = h - Math.floor(h)
+        var sat = Math.min(cs, anchorS)
+        sat = sat + (anchorS - sat) * t
+        var val = c.hsvValue + (anchor.hsvValue - c.hsvValue) * t
+        return Qt.hsva(h, sat, val, 1)
+    }
+
     function relLuminance(c) {
         function ch(v) { return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4) }
         return 0.2126 * ch(c.r) + 0.7152 * ch(c.g) + 0.0722 * ch(c.b)
@@ -478,6 +510,17 @@ Item {
         root.glassHover = p.currentLine
         root.fg = p.fg
         root.comment = p.comment
+        // Older caches predate the semantic colours; those keep the fallback
+        // until the extractor answers with a full palette.
+        if (p.red) {
+            root.red = p.red
+            root.orange = p.orange
+            root.yellow = p.yellow
+            root.green = p.green
+            root.cyan = p.cyan
+            root.purple = p.purple
+            root.pink = p.pink
+        }
     }
 
     Process {

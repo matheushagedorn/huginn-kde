@@ -122,8 +122,10 @@ GlassPanel {
             // Kept apart from `tint` because the Behavior below makes `tint`
             // the colour on its way there, and the contrast check has to be
             // made against where it is going, not where it is.
+            // The cover's colour, brought into the palette: raw, a blue
+            // thumbnail sat on a warm theme like something from another desktop.
             readonly property color tintTarget: MediaService.hasPlayer && MediaService.artTint !== ""
-                                                ? MediaService.artTint : Theme.accent
+                                                ? Theme.harmonize(MediaService.artTint, Theme.accent, 0.55) : Theme.accent
             property color tint: tintTarget
             Behavior on tint { ColorAnimation { duration: 700; easing.type: Easing.InOutQuad } }
 

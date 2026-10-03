@@ -83,6 +83,16 @@ def extract(path):
     # arguing with it. A quarter turn reads as related, not as a clash.
     sub_h = accent_h + 0.12
 
+    # The semantic colours (a muted mic, a hot CPU, a connected device) keep
+    # the hue that gives them their meaning, red stays red, but take the
+    # picture's intensity: a pastel wallpaper gets pastel signals instead of
+    # the fallback's neon. The floors keep them readable on the dark ground.
+    sem_s = max(0.40, min(0.70, accent_s * 0.9))
+    sem_v = max(0.85, min(0.97, accent_v))
+
+    def semantic(hue_deg):
+        return _hsv_to_hex(hue_deg / 360.0, sem_s, sem_v)
+
     palette = {
         "name": "From wallpaper",
         # Which picture this came from, so a cached palette left over from
@@ -96,6 +106,13 @@ def extract(path):
         "currentLine": _hsv_to_hex(gh, 0.17, 0.30),
         "fg": _hsv_to_hex(gh, 0.05, 0.97),
         "comment": _hsv_to_hex(gh, 0.28, 0.62),
+        "red": semantic(5),
+        "orange": semantic(30),
+        "yellow": semantic(55),
+        "green": semantic(115),
+        "cyan": semantic(175),
+        "purple": semantic(255),
+        "pink": semantic(330),
     }
     return palette
 
