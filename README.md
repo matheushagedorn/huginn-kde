@@ -46,7 +46,8 @@ The dock, which stays hidden until the pointer reaches the bottom edge:
 - **Theme engine** that propagates the palette to GTK, Konsole, Alacritty,
   btop, Starship, VS Code and others, with a **From wallpaper** variant that
   derives the palette from the picture on screen (Pillow only, no matugen or
-  wallust needed).
+  wallust needed). The theme and wallpaper pickers open from a right click
+  on an empty part of the dock.
 
 ## Requirements
 
@@ -79,6 +80,8 @@ into System Settings by hand:
 |---|---|
 | Meta | `huginn-launcher` |
 | Meta+W | `huginn-overview` (takes the key from KWin's Overview) |
+| Meta+Shift+T | `huginn-themes` (theme picker) |
+| unbound | `huginn-wallpapers` (wallpaper picker) |
 | Volume Up / Down / Mute | `huginn-volume-up` / `-down` / `-mute` |
 | unbound | `huginn-lock` |
 

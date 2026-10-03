@@ -19,13 +19,15 @@ Item {
     property bool batteryMenuOpen: false
     property bool trayMenuOpen: false
     property bool dockMenuOpen: false
+    // Right click on an empty part of the dock: themes and wallpapers.
+    property bool dockShellMenuOpen: false
     property bool appLauncherOpen: false
     property bool themePickerOpen: false
     property bool wallpaperPickerOpen: false
     property bool previewOpen: false
     property bool contextMenuOpen: false
 
-    property bool anyOpen: sessionMenuOpen || calendarMenuOpen || weatherPickerOpen || mediaMenuOpen || notificationMenuOpen || captureMenuOpen || clipboardMenuOpen || audioMenuOpen || bluetoothMenuOpen || brightnessMenuOpen || mountMenuOpen || networkMenuOpen || batteryMenuOpen || trayMenuOpen || dockMenuOpen || appLauncherOpen || themePickerOpen || wallpaperPickerOpen || contextMenuOpen
+    property bool anyOpen: sessionMenuOpen || calendarMenuOpen || weatherPickerOpen || mediaMenuOpen || notificationMenuOpen || captureMenuOpen || clipboardMenuOpen || audioMenuOpen || bluetoothMenuOpen || brightnessMenuOpen || mountMenuOpen || networkMenuOpen || batteryMenuOpen || trayMenuOpen || dockMenuOpen || dockShellMenuOpen || appLauncherOpen || themePickerOpen || wallpaperPickerOpen || contextMenuOpen
 
     function closeAll() {
         sessionMenuOpen = false
@@ -43,6 +45,7 @@ Item {
         batteryMenuOpen = false
         trayMenuOpen = false
         dockMenuOpen = false
+        dockShellMenuOpen = false
         appLauncherOpen = false
         themePickerOpen = false
         wallpaperPickerOpen = false
@@ -54,6 +57,12 @@ Item {
         let state = !themePickerOpen
         closeAll()
         themePickerOpen = state
+    }
+
+    function toggleDockShellMenu() {
+        let state = !dockShellMenuOpen
+        closeAll()
+        dockShellMenuOpen = state
     }
 
     function toggleWallpaperPicker() {

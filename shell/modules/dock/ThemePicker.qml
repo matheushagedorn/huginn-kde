@@ -10,7 +10,7 @@ Item {
     visible: false
     opacity: animProgress
     scale: 0.95 + 0.05 * animProgress
-    transformOrigin: Item.BottomRight
+    transformOrigin: Item.Bottom
 
     property real animProgress: 0.0
 

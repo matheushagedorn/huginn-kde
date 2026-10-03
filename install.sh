@@ -260,6 +260,8 @@ HELPERS=(
     "huginn-volume-mute:quickshell -p \"$HOME/.config/huginn\" ipc call volume mute"
     "huginn-launcher:quickshell -p \"$HOME/.config/huginn\" ipc call launcher toggle"
     "huginn-overview:quickshell -p \"$HOME/.config/huginn\" ipc call overview toggle"
+    "huginn-themes:quickshell -p \"$HOME/.config/huginn\" ipc call popup themepicker"
+    "huginn-wallpapers:quickshell -p \"$HOME/.config/huginn\" ipc call popup wallpaperpicker"
     "huginn-lock:touch /tmp/huginn_lock_trigger 2>/dev/null || true; loginctl lock-session"
 )
 
@@ -291,6 +293,8 @@ SHORTCUTS=(
     "huginn-volume-mute:Volume Mute:Mute"
     "huginn-launcher:Meta:App Launcher"
     "huginn-overview:Meta+W:Window Overview"
+    "huginn-themes:Meta+Shift+T:Theme Picker"
+    "huginn-wallpapers::Wallpaper Picker"
     "huginn-lock::"
 )
 

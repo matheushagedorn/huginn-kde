@@ -10,7 +10,7 @@ Item {
     visible: false
     opacity: animProgress
     scale: 0.95 + 0.05 * animProgress
-    transformOrigin: Item.BottomRight
+    transformOrigin: Item.Bottom
 
     property real animProgress: 0.0
 
@@ -52,6 +52,9 @@ Item {
 
     readonly property var filteredWallpapers: {
         if (!WallpaperService.wallpapers) return [];
+        // "From wallpaper" has no folder of its own, and any picture is a
+        // valid choice there: the palette follows whatever is picked.
+        if (Theme.currentVariant === "From wallpaper") return WallpaperService.wallpapers;
         let curVar = Theme.currentVariant.toLowerCase().trim();
         let list = [];
         for (let i = 0; i < WallpaperService.wallpapers.length; i++) {

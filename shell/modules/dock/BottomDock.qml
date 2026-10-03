@@ -40,6 +40,25 @@ Item {
         implicitHeight: 52
         anchors.centerIn: parent
 
+        // Right click on the dock itself, between or around the icons, opens
+        // the theme and wallpaper menu. It sits under the row, so a right
+        // click on an icon still reaches that app's own menu.
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton
+            onClicked: mouse => {
+                shellMenuAnchor.x = mouse.x
+                PopupService.toggleDockShellMenu()
+            }
+        }
+
+        // Where the menu grows from: the point that was clicked.
+        Item {
+            id: shellMenuAnchor
+            width: 1
+            height: parent.height
+        }
+
         RowLayout {
             id: dockRow
             anchors.centerIn: parent
@@ -1172,6 +1191,86 @@ Item {
                                 TaskService.closeApp(root.contextTargetApp.appId)
                             }
                             PopupService.closeAll()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Themes and wallpapers, from a right click on the dock.
+    PopupWindow {
+        id: dockShellMenu
+        anchor.window: root.dockWindow
+        anchor.rect.x: {
+            if (!root.dockWindow) return 0
+            let x = shellMenuAnchor.mapToItem(root.dockWindow.contentItem, 0, 0).x
+            return Math.max(10, Math.min(root.dockWindow.width - implicitWidth - 10, Math.round(x - implicitWidth / 2)))
+        }
+        anchor.rect.y: 0
+        anchor.edges: Edges.Top | Edges.Left
+        anchor.gravity: Edges.Top | Edges.Right
+        visible: false
+        color: "transparent"
+
+        implicitWidth: 160
+        implicitHeight: 72
+
+        MorphPanel {
+            id: shellMenuGlass
+            popup: dockShellMenu
+            trigger: shellMenuAnchor
+            open: PopupService.dockShellMenuOpen
+            implicitWidth: 160
+            implicitHeight: 72
+            anchors.fill: parent
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 4
+
+                Repeater {
+                    model: [
+                        { label: "Themes",     icon: "palette" },
+                        { label: "Wallpapers", icon: "image" }
+                    ]
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 24
+                        radius: 4
+                        color: shellItemMouse.containsMouse ? Theme.stateAccentHover : "transparent"
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            spacing: 8
+
+                            UiIcon {
+                                name: modelData.icon
+                                color: shellItemMouse.containsMouse ? Theme.accent : Theme.fg
+                                implicitWidth: 13
+                                implicitHeight: 13
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+
+                            Text {
+                                text: modelData.label
+                                color: Theme.fg
+                                font.pixelSize: Theme.fsCaption
+                                font.family: Theme.fontFamily
+                                font.weight: Font.Medium
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignVCenter
+                            }
+                        }
+
+                        MouseArea {
+                            id: shellItemMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: index === 0 ? PopupService.toggleThemePicker() : PopupService.toggleWallpaperPicker()
                         }
                     }
                 }

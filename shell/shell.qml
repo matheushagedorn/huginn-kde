@@ -37,6 +37,9 @@ Scope {
         function weatherpicker() { PopupService.toggleWeatherPicker() }
         function session() { PopupService.toggleSession() }
         function notifications() { PopupService.toggleNotification() }
+        function dockmenu() { PopupService.toggleDockShellMenu() }
+        function themepicker() { PopupService.toggleThemePicker() }
+        function wallpaperpicker() { PopupService.toggleWallpaperPicker() }
         function close() { PopupService.closeAll() }
     }
 
@@ -347,13 +350,28 @@ Scope {
                     hideDockTimer.restart()
                 }
             }
+            // The pickers open from the dock's right-click menu and sit over
+            // the dock, so it stays while the menu or a picker is up.
+            function onDockShellMenuOpenChanged() { dockWindow.pickerChanged() }
+            function onThemePickerOpenChanged() { dockWindow.pickerChanged() }
+            function onWallpaperPickerOpenChanged() { dockWindow.pickerChanged() }
+        }
+
+        readonly property bool pickerOpen: PopupService.dockShellMenuOpen || PopupService.themePickerOpen || PopupService.wallpaperPickerOpen
+        function pickerChanged() {
+            if (pickerOpen) {
+                hideDockTimer.stop()
+                revealed = true
+            } else if (!dockHover.hovered) {
+                hideDockTimer.restart()
+            }
         }
 
         Timer {
             id: hideDockTimer
             interval: 400
             onTriggered: {
-                if (!PopupService.dockMenuOpen && !PopupService.previewOpen) {
+                if (!PopupService.dockMenuOpen && !PopupService.previewOpen && !dockWindow.pickerOpen) {
                     dockWindow.revealed = false
                 }
             }
@@ -389,14 +407,9 @@ Scope {
     PanelWindow {
         id: themePickerWindow
         screen: primaryScreen
-        anchors {
-            bottom: true
-            right: true
-        }
-        margins {
-            bottom: 74
-            right: Math.max(20, Math.round((dockWindow.width - bottomDock.implicitWidth) / 2) + 48)
-        }
+        anchors.bottom: true
+        // Only the bottom edge: the layer shell centres it over the dock.
+        margins.bottom: 74
 
         WlrLayershell.layer: WlrLayershell.Top
         exclusionMode: ExclusionMode.Ignore
@@ -414,14 +427,9 @@ Scope {
     PanelWindow {
         id: wallpaperPickerWindow
         screen: primaryScreen
-        anchors {
-            bottom: true
-            right: true
-        }
-        margins {
-            bottom: 74
-            right: Math.max(20, Math.round((dockWindow.width - bottomDock.implicitWidth) / 2))
-        }
+        anchors.bottom: true
+        // Only the bottom edge: the layer shell centres it over the dock.
+        margins.bottom: 74
 
         WlrLayershell.layer: WlrLayershell.Top
         exclusionMode: ExclusionMode.Ignore
