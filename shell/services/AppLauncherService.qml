@@ -185,7 +185,9 @@ Item {
         if (isGame(app)) {
             if (!app.launch || app.launch.length === 0) return
             recordUse(app)
-            Quickshell.execDetached(app.launch)
+            // In a scope of its own, like every other launch, so the store
+            // (and the game it starts) survives a restart of the shell.
+            Quickshell.execDetached(["python3", Quickshell.env("HOME") + "/.config/huginn/services/python/run_scoped.py"].concat(app.launch))
             return
         }
         if (!app || !app.exec) return

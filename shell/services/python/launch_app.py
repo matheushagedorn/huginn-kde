@@ -7,6 +7,8 @@ import shutil
 import re
 import shlex
 
+from run_scoped import scoped_argv
+
 def clean_field_codes(cmd):
     if not cmd:
         return ""
@@ -128,11 +130,14 @@ def resolve_desktop_entry(query, desktop_dirs):
 
     return None, None
 
-def exec_fast(args_list, run_env):
-    """Executes command directly without shell indirection or D-Bus latency for snappy launches."""
+def exec_fast(args_list, run_env, name=None):
+    """Executes command directly without shell indirection or D-Bus latency for snappy launches.
+
+    In a scope of its own, so the app is not killed with the shell's cgroup
+    when huginn.service restarts."""
     try:
         subprocess.Popen(
-            args_list,
+            scoped_argv(args_list, name),
             start_new_session=True,
             close_fds=True,
             env=run_env,
@@ -169,7 +174,7 @@ def launch():
     # Fast path 1: Absolute path to a .desktop file
     if os.path.isabs(clean_cmd) and os.path.exists(clean_cmd) and clean_cmd.endswith('.desktop'):
         if gio_bin:
-            exec_fast([gio_bin, "launch", clean_cmd], run_env)
+            exec_fast([gio_bin, "launch", clean_cmd], run_env, os.path.basename(clean_cmd))
             sys.exit(0)
         else:
             exec_cmd = parse_exec_from_desktop(clean_cmd)
@@ -180,7 +185,7 @@ def launch():
     desktop_path, desktop_exec = resolve_desktop_entry(clean_cmd, desktop_dirs)
     if desktop_path:
         if gio_bin:
-            exec_fast([gio_bin, "launch", desktop_path], run_env)
+            exec_fast([gio_bin, "launch", desktop_path], run_env, os.path.basename(desktop_path))
             sys.exit(0)
         elif desktop_exec:
             clean_cmd = desktop_exec

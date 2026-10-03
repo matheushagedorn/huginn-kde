@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os, sys, argparse, re, shutil
 
+from run_scoped import scoped_argv, scoped_shell
+
 # Plasma 6 ships the tool as `qdbus6`; plain `qdbus` is the Qt 5 name and is
 # not installed on a Qt 6 only machine. Every call here used to use the Qt 5
 # name and fail silently, which is why KWin was never told to reconfigure and
@@ -108,18 +110,18 @@ def restart_app_if_running(name, search_patterns, launch_commands):
                 app_id = cmd.split()[-1]
                 check_fp = subprocess.run(["flatpak", "info", app_id], capture_output=True, text=True)
                 if check_fp.returncode == 0:
-                    subprocess.Popen(cmd, shell=True, start_new_session=True)
+                    subprocess.Popen(scoped_shell(cmd, app_id), start_new_session=True)
                     return
             elif cmd.startswith("gtk-launch"):
                 app_id = cmd.split()[-1]
-                res_gtk = subprocess.run(["gtk-launch", app_id], capture_output=True)
+                res_gtk = subprocess.run(scoped_argv(["gtk-launch", app_id], app_id), capture_output=True)
                 if res_gtk.returncode == 0:
                     return
             else:
                 bin_name = cmd.split()[0]
                 res_bin = subprocess.run(f"command -v {bin_name}", capture_output=True, shell=True)
                 if res_bin.returncode == 0:
-                    subprocess.Popen(cmd, shell=True, start_new_session=True)
+                    subprocess.Popen(scoped_shell(cmd, bin_name), start_new_session=True)
                     return
         except Exception:
             pass
@@ -127,7 +129,7 @@ def restart_app_if_running(name, search_patterns, launch_commands):
     # Generic shell fallback launch
     if launch_commands:
         raw_cmd = " || ".join(launch_commands)
-        subprocess.Popen(f"sh -c '{raw_cmd} &'", shell=True, start_new_session=True)
+        subprocess.Popen(scoped_shell(raw_cmd, name), start_new_session=True)
 
 def sync_kde(bg, surface, current_line, fg, accent, sub_accent, is_dark, variant_name):
     import re, subprocess

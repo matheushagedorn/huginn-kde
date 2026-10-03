@@ -25,7 +25,7 @@ Item {
     }
 
     function mountAndOpen(devPath) {
-        openProc.command = ["bash", "-c", "OUT=$(udisksctl mount -b " + devPath + " 2>&1); MP=$(echo \"$OUT\" | grep -o '/run/media/.*'); if [ -n \"$MP\" ]; then xdg-open \"$MP\"; fi"]
+        openProc.command = ["bash", "-c", "OUT=$(udisksctl mount -b " + devPath + " 2>&1); MP=$(echo \"$OUT\" | grep -o '/run/media/.*'); if [ -n \"$MP\" ]; then python3 \"$HOME/.config/huginn/services/python/run_scoped.py\" xdg-open \"$MP\"; fi"]
         openProc.running = true
     }
 

@@ -5,6 +5,8 @@ import getpass
 import subprocess
 import time
 
+from run_scoped import scoped_argv
+
 def run_spectacle():
     # 1. Always kill any existing stuck spectacle processes first to ensure DBus single-instance lock is free
     try:
@@ -59,7 +61,7 @@ def run_spectacle():
     # 4. Launch Spectacle detached in a clean session
     try:
         subprocess.Popen(
-            cmd,
+            scoped_argv(cmd),
             start_new_session=True,
             close_fds=True,
             env=run_env,
