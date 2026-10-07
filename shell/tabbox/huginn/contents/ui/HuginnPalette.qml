@@ -5,10 +5,10 @@
 import QtQuick
 
 QtObject {
-    readonly property color bg: "#16171c"
-    readonly property color surface: "#23242b"
-    readonly property color line: "#3f424c"
-    readonly property color fg: "#ebedf7"
-    readonly property color accent: "#6d7ec7"
-    readonly property color subAccent: "#9f72c7"
+    readonly property color bg: "#1c1616"
+    readonly property color surface: "#2b2323"
+    readonly property color line: "#4c3f41"
+    readonly property color fg: "#f7ebec"
+    readonly property color accent: "#c76d75"
+    readonly property color subAccent: "#c7a872"
 }
