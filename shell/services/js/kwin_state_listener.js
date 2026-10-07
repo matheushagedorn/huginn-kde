@@ -165,7 +165,7 @@ function watchWindow(w) {
     // updateWindows only, never the refit: the bar animates its reserved area
     // when a window is maximized, every frame of that lands here as a
     // geometry change, and refitting on each one would fight the animation.
-    var signals = ["minimizedChanged", "fullScreenChanged", "maximizedAboutToChange",
+    var signals = ["minimizedChanged", "fullScreenChanged", "maximizedChanged",
                    "frameGeometryChanged", "outputChanged", "desktopsChanged"];
     for (var i = 0; i < signals.length; i++) {
         try {
