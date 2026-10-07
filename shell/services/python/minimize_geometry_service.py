@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Tell KWin where each window's icon sits on the Huginn dock.
 
-KWin's magic lamp animation aims at Window::iconGeometry. On Wayland that
+KWin's minimize animation (squash) aims at Window::iconGeometry. On Wayland that
 value has exactly one source: a client that speaks org_kde_plasma_window_
 management and calls set_minimized_geometry for the window, which is the job
 of the Plasma task manager. Huginn replaces the task manager, and nothing in
 QuickShell or in KWin's scripting API can fill that in -- iconGeometry is
 read-only there, and setMinimizeIconGeometry does not exist. So the rectangles
-stay 0x0, the lamp has no target and falls back to the nearest screen edge.
+stay 0x0, the animation has no target and falls back to the nearest screen edge.
 
 This service is the missing task manager, and nothing else: it maps a surface
 of its own (the protocol anchors the rectangles to a client surface, so there

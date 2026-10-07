@@ -230,8 +230,10 @@ EOF
 
     warn "$helper_bin may now read the window list of the session and capture window images."
 
-    # The lamp is what aims at those rectangles.
-    kwriteconfig6 --file kwinrc --group Plugins --key magiclampEnabled true
+    # Squash is what aims at those rectangles: the window shrinks into its
+    # dock icon without bending on the way, which the lamp did.
+    kwriteconfig6 --file kwinrc --group Plugins --key magiclampEnabled false
+    kwriteconfig6 --file kwinrc --group Plugins --key squashEnabled true
     qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
 }
 
