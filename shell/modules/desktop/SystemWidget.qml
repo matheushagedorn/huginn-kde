@@ -43,6 +43,7 @@ PanelWindow {
     screen: Quickshell.screens.find(s => s.name === "DP-2") || Quickshell.screens[0]
 
     WlrLayershell.layer: WlrLayershell.Bottom
+    WlrLayershell.namespace: "desktop"
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
 

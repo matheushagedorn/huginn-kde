@@ -13,6 +13,7 @@ PanelWindow {
     }
 
     WlrLayershell.layer: WlrLayershell.Background
+    WlrLayershell.namespace: "desktop"
     WlrLayershell.keyboardFocus: WlrLayershell.None
     exclusionMode: ExclusionMode.Ignore
     color: Theme.bg

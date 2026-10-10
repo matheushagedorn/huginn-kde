@@ -135,6 +135,7 @@ Scope {
             }
 
             WlrLayershell.layer: WlrLayershell.Top
+            WlrLayershell.namespace: "dock"
             exclusiveZone: Theme.barHeight + (secondaryBarWindow.filled ? 0 : secondaryBarWindow.restGap)
             implicitHeight: Theme.barHeight
             color: "transparent"
@@ -228,6 +229,11 @@ Scope {
         // recomputed on every frame of the slide, and the window underneath
         // would be resized sixty times for one transition.
         WlrLayershell.layer: WlrLayershell.Top
+        // KWin reads the window type off the namespace. Left on the default
+        // ("quickshell") the bar counts as a normal window, and Show Desktop
+        // (Meta+D) hides it with everything else. Same for the dock, the
+        // secondary bars, and "desktop" on the wallpaper and the widget.
+        WlrLayershell.namespace: "dock"
         exclusiveZone: Theme.barHeight + (window.filled ? 0 : window.restGap)
 
         implicitHeight: Theme.barHeight
@@ -302,6 +308,7 @@ Scope {
         }
 
         WlrLayershell.layer: WlrLayershell.Top
+        WlrLayershell.namespace: "dock"
         implicitHeight: 66
         color: "transparent"
 
